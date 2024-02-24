@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+*,
+*:before,
+*:after {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  font-family: Montserrat, sans-serif;
+}
+
+
+a:focus,
+a:active {
+  outline: none;
+}
+
+a,
+a:visited {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+
+input,
+button,
+textarea {
+  font-family: inherit;
+}
+
+#root{
+  position: relative;
+  min-height: 100vh;
+  height: 100%;
+  background: #000;
+  &:before{
+    content: " ";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0px;
+    box-shadow: 0 70px 40px 68px rgba(163, 132, 46, 1);
+    z-index: 5;
+  }
+}
+
+.book_a_table{
+  position: relative;
+  border-radius: 54px;
+  background: rgba(163, 132, 46, .7);
+  padding: 12px 58px 12px 24px;
+  height: 46px;
+
+  font-size: 16px;
+  color: #fff;
+
+  &:before {
+    content: " ";
+    position: absolute;
+
+    right: 4px;
+    top: 50%;
+    transform: translate(0%, -50%);
+
+    width: 40px;
+    height: 40px;
+    border-radius: 100%;
+    background: rgba(255,255,255,0.7);
+    background-image: url("/src/assets/next.svg");
+    background-position: center;
+    background-size: 16px;
+    background-repeat: no-repeat;
+  }
+}
