@@ -1,13 +1,14 @@
 const { getStats, banTgUser, telegramUserData, fillingData, updatedFilling, getCategory, getUserLanguage,
-    webAppTranslate, createCatName, getCatName, sendReviewUser, sendBookTable, getBookTable
+    webAppTranslate, createCatName, getCatName, sendReviewUser, sendBookTable, getBookTable, getReviews
 } = require("../Controllers/AdminController");
 const router = require("express").Router();
 
 router.post("/banTgUser", banTgUser);
 router.get("/getStats", getStats);
 router.get("/tgUsers", telegramUserData);
-router.get("/fillingData", fillingData);
+router.post("/fillingData", fillingData);
 router.post("/updatedFilling", updatedFilling);
+router.get("/getReviews", getReviews);
 
 router.post("/getUserLanguage", getUserLanguage);
 router.post("/webAppTranslate", webAppTranslate);

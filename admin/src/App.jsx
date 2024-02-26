@@ -15,6 +15,9 @@ import TgUsers from "./pages/TgUsers.jsx";
 import Category from "./pages/Category.jsx";
 import Settings from "./pages/Settings.jsx";
 import Product from "./pages/Product.jsx";
+import Reservation from "./pages/Reservation.jsx";
+import SelectedFilling from "./pages/SelectedFilling.jsx";
+import Reviews from "./pages/Reviews.jsx";
 
 function App() {
     const routes = [
@@ -35,6 +38,10 @@ function App() {
             element: <ProtectedRoute element={<Main><Category/></Main>}/>,
         },
         {
+            link: '/reservation',
+            element: <ProtectedRoute element={<Main><Reservation/></Main>}/>,
+        },
+        {
             link: '/product/:id',
             element: <ProtectedRoute element={<Main><Product/></Main>}/>,
         },
@@ -43,7 +50,19 @@ function App() {
             element: <ProtectedRoute element={<Main><Settings/></Main>}/>,
         },
         {
+            link: '/feedback',
+            element: <ProtectedRoute element={<Main><Reviews/></Main>}/>,
+        },
+        {
             link: '/filling',
+            element: <ProtectedRoute element={<Main><SelectedFilling/></Main>}/>,
+        },
+        {
+            link: '/filling/bot',
+            element: <ProtectedRoute element={<Main><Filling/></Main>}/>,
+        },
+        {
+            link: '/filling/webapp',
             element: <ProtectedRoute element={<Main><Filling/></Main>}/>,
         },
         {

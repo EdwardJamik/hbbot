@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const usersSchema = new mongoose.Schema({
     chat_id: {
-        type: Number,
+        type: String,
         unique: true,
     },
     first_name: {

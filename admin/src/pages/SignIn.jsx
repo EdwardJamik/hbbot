@@ -76,7 +76,7 @@ const SignIn  = () => {
                       },
                     ]}
                   >
-                    <Input name="username" placeholder="Username" />
+                    <Input name="username" placeholder="Username" style={{height:'48px', padding: '8px 22px'}} />
                   </Form.Item>
 
                   <Form.Item

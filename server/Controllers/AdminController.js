@@ -67,9 +67,48 @@ module.exports.telegramUserData = async (req, res, next) => {
     }
 };
 
+module.exports.getReviews = async (req, res, next) => {
+    try {
+        // const review = await Reviews.find().sort({createdAt:-1}).populate({
+        //     path: 'chat_id',
+        //     model: 'Users' // назва моделі, яка відповідає колекції 'chat_id'
+        // });
+        const result = await Reviews.aggregate([
+            {
+                $lookup: {
+                    from: 'Users',
+                    localField: 'chat_id', // поле, яке поєднує Reviews і Users (замість 'userId' використайте ваше поле)
+                    foreignField: 'chat_id', // поле, яке поєднує Reviews і Users (замість '_id' використайте ваше поле)
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    _id: 1, // виберіть ті поля, які вам потрібні
+                    otherFields: 1,
+                    'user.username': 1,
+                    'user.first_name': 1,
+                    'user.chat_id': 1
+                }
+            }
+        ])
+        console.log(result)
+
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 module.exports.fillingData = async (req, res, next) => {
     try {
-        const changeBanUser = await Response.find({web:false});
+        const {value} = req.body
+
+        const changeBanUser = await Response.find({web:value});
 
         res.json(changeBanUser);
     } catch (error) {
@@ -79,11 +118,12 @@ module.exports.fillingData = async (req, res, next) => {
 
 module.exports.updatedFilling = async (req, res, next) => {
     try {
+        const {data,value} = req.body;
 
-        const array = req.body;
-        for (let i = 0; i < array.length; i++) {
-            await Response.updateOne({_id: array[i]._id,web:false}, {response: array[i].response});
+        for (let i = 0; i < data.length; i++) {
+            await Response.updateOne({_id: data[i]._id,web:value}, {response: data[i].response});
         }
+
         res.json(true);
     } catch (err) {
         console.error(err);
@@ -147,10 +187,10 @@ module.exports.sendReviewUser = async (req, res, next) => {
         const { response } = await Response.findOne({ id_response:'review_notification_message' }, { response: 1, _id: 0 });
 
 
-        if(review_star < 4){
+        // if(review_star < 4){
             const sendReview = await Reviews.create({review_text, chat_id, review_star})
             await bot.telegram.sendMessage( '-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode:"HTML"})
-        }
+        // }
         await bot.telegram.sendMessage( chat_id, response[user?.language], {parse_mode:"HTML"})
 
 

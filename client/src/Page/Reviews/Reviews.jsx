@@ -17,30 +17,14 @@ const Reviews = () => {
     const tg = window.Telegram.WebApp;
 
     const sendReviews = async () => {
-        if (value < 4) {
-            const {data} = await axios.post(
-                `${url}/api/v1/admin/sendReviewUser`,
-                {review_text:isReview, chat_id, review_star:value},
-                {withCredentials: true}
-            );
-            if(data)
-                tg.close()
-        } else {
-            if(isModal) {
-                const {data} = await axios.post(
-                    `${url}/api/v1/admin/sendReviewUser`,
-                    {review_text:isReview, chat_id, review_star:value},
-                    {withCredentials: true}
-                );
+        const {data} = await axios.post(
+            `${url}/api/v1/admin/sendReviewUser`,
+            {review_text: isReview, chat_id, review_star: value},
+            {withCredentials: true}
+        );
 
-                if(data)
-                    tg.close();
-
-            }
-            else {
-                setModal(true)
-            }
-        }
+        if (data)
+            tg.close();
     }
 
     return (
@@ -60,7 +44,7 @@ const Reviews = () => {
                 <Flex className='rate_stars' gap="middle" vertical>
                     <Rate onChange={setValue} allowClear={false} value={value}/>
                 </Flex>
-                    <div className={value < 4 ? 'feedback_form open' : 'feedback_form'}>
+                    <div className={'feedback_form open'}>
                         <h4><Translate keyWord='reviews_problem_text'/></h4>
                         <TextArea value={isReview} onChange={(e)=>{setReview(e.target.value)}} rows={4} placeholder="maxLength is 6" maxLength={600} />
                     </div>

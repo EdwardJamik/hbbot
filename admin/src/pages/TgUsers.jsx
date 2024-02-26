@@ -164,10 +164,18 @@ function Tables() {
       dataIndex: "username",
       key: "username",
       ...getColumnSearchProps('username'),
-      render: (username) => <>{username === 'Not specified' ? {username} :
-          <a href={`https://t.me/${username}`} target="_blank" rel="noreferrer">{username}</a>}</>,
-    },
+      render: (username) =>
+          <>
+            {username !== 'Not specified' ?
+                <a href={`https://t.me/${username}`}
+                   target="_blank" rel="noreferrer">{username}</a>
+                :
+                username
+            }
 
+          </>
+      ,
+    },
     {
       title: "First name",
       key: "first_name",

@@ -2140,9 +2140,9 @@ body {
   margin: auto;
   display: block;
 }
-.layout-signin {
-  background: #fff;
-}
+/*.layout-signin {*/
+/*  background: #fff;*/
+/*}*/
 .layout-signin footer.ant-layout-footer svg {
   width: 18px;
   height: 18px;
@@ -3063,4 +3063,40 @@ section.ant-layout.ant-layout-has-sider.layout-dashboard.layout-profile
   background: #000;
   border-color: #000;
   color: #C6AC47;
+}
+
+.container_Select_Filling{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80%;
+
+  & a{
+    position: relative;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #C6AC47;
+    height: 120px;
+    width: 160px;
+    margin: 0 60px;
+
+    &:hover{
+      background: rgba(163, 132, 46, 0.8);
+      border-color: #000;
+      &>svg{
+        fill: #fff;
+      }
+    }
+  }
+}
+
+.translateItem{
+  cursor: pointer;
+  padding: 12px 8px;
+  border-radius: 8px;
+  &:hover{
+    background: rgba(163, 132, 46, 0.4);
+  }
 }
