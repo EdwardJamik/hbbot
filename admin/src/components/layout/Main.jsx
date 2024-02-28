@@ -9,7 +9,7 @@ const { Header: AntHeader, Content, Sider } = Layout;
 function Main({ children }) {
   const [visible, setVisible] = useState(false);
   const [placement, setPlacement] = useState("right");
-  const [sidenavColor, setSidenavColor] = useState("#1890ff");
+  const [sidenavColor, setSidenavColor] = useState("#A3842E");
   const [sidenavType, setSidenavType] = useState("transparent");
   const [fixed, setFixed] = useState(false);
 

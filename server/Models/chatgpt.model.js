@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const chatgptScheme = new mongoose.Schema({
     chat_id:{
-        type: Object,
+        type: String,
         ref: 'Users',
         required: true,
     },

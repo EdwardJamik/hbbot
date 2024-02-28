@@ -1,1 +1,1 @@
-export const url = 'https://c8d8-31-172-136-52.ngrok-free.app'
+export const url = 'http://localhost:5000'

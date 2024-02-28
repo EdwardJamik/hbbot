@@ -17,6 +17,11 @@ const Reserved = require("../Models/reserved.model");
 const Manager = require("../Models/user.model");
 const Response = require("../Models/response.model");
 const Reviews = require("../Models/reviews.model");
+const ChatGPT = require("../Models/chatgpt.model");
+const axios = require("axios");
+const languageResponse = require("../bot/middelware/middelware");
+const path = require("path");
+const OpenAI = require("openai");
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -69,16 +74,12 @@ module.exports.telegramUserData = async (req, res, next) => {
 
 module.exports.getReviews = async (req, res, next) => {
     try {
-        // const review = await Reviews.find().sort({createdAt:-1}).populate({
-        //     path: 'chat_id',
-        //     model: 'Users' // назва моделі, яка відповідає колекції 'chat_id'
-        // });
         const result = await Reviews.aggregate([
             {
                 $lookup: {
-                    from: 'Users',
-                    localField: 'chat_id', // поле, яке поєднує Reviews і Users (замість 'userId' використайте ваше поле)
-                    foreignField: 'chat_id', // поле, яке поєднує Reviews і Users (замість '_id' використайте ваше поле)
+                    from: 'users',
+                    localField: 'chat_id',
+                    foreignField: 'chat_id',
                     as: 'user'
                 }
             },
@@ -87,15 +88,125 @@ module.exports.getReviews = async (req, res, next) => {
             },
             {
                 $project: {
-                    _id: 1, // виберіть ті поля, які вам потрібні
-                    otherFields: 1,
+                    _id: 1,
+                    review_text: 1,
+                    review_star:1,
+                    updatedAt:1,
+                    createdAt:1,
                     'user.username': 1,
                     'user.first_name': 1,
                     'user.chat_id': 1
                 }
             }
         ])
-        console.log(result)
+
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.getChats = async (req, res, next) => {
+    try {
+        const result = await ChatGPT.aggregate([
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'chat_id',
+                    foreignField: 'chat_id',
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    'user.username': 1,
+                    'user.first_name': 1,
+                    'user.chat_id': 1,
+                    open:1,
+                    updatedAt:1,
+                    createdAt:1
+                }
+            },
+            {
+                $match: {
+                    open: false
+                }
+            }
+        ]).sort({updatedAt:-1})
+
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.getUserChat = async (req, res, next) => {
+    try {
+
+        const {id} = req.body
+
+        if(id){
+            const findChat = await ChatGPT.findOne({_id:id})
+            if(findChat){
+                const directoryPath = './gpt';
+                const fileName = `${id}.json`;
+                const filePath = path.join(directoryPath, fileName);
+
+                fs.readFile(filePath, 'utf8', async (readErr, data) => {
+                    if (readErr) {
+                        res.json({eMessage:'Ошибка при чтение файла или файла не существует.'});
+                    } else {
+                        const chat = JSON.parse(data)
+                        res.json({chat});
+                    }
+                });
+            }
+        }
+
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+module.exports.getReserves = async (req, res, next) => {
+    try {
+        const result = await Reserved.aggregate([
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'chat_id',
+                    foreignField: 'chat_id',
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    count_people: 1,
+                    date:1,
+                    time:1,
+                    first_name:1,
+                    phone:1,
+                    declined:1,
+                    accepted:1,
+                    'user.username': 1,
+                    'user.first_name': 1,
+                    'user.chat_id': 1,
+                    updatedAt:1,
+                    createdAt:1
+                }
+            }
+        ]).sort({accepted:1, decline:1, updatedAt:1})
 
 
         res.json(result);
@@ -111,6 +222,37 @@ module.exports.fillingData = async (req, res, next) => {
         const changeBanUser = await Response.find({web:value});
 
         res.json(changeBanUser);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.getInstruction = async (req, res, next) => {
+    try {
+
+        const data = fs.readFileSync('./input.txt', 'utf8');
+
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.savedInstruction = async (req, res, next) => {
+    try {
+        const {data} = req.body;
+
+        const {GPT_API,GPT_ASSISSTAN} = process.env
+
+        fs.writeFileSync('./input.txt', data, 'utf8');
+
+        const openai = new OpenAI({
+            apiKey: GPT_API,
+        });
+
+        const response = await openai.beta.assistants.update(`${GPT_ASSISSTAN}`,{instructions:data ? data : 'false'})
+
+        res.json({success:true,eMessage:'Инструкцию ассистента сохранено'});
     } catch (error) {
         console.error(error);
     }
@@ -182,16 +324,15 @@ module.exports.sendReviewUser = async (req, res, next) => {
     try {
         const {review_text, chat_id, review_star} = req.body;
 
-        const user = await TelegramUsers.findOne({chat_id}, {first_name:1,username: 1,phone:1, language:1})
+        const user = await TelegramUsers.findOne({chat_id}, {first_name: 1, username: 1, phone: 1, language: 1})
 
-        const { response } = await Response.findOne({ id_response:'review_notification_message' }, { response: 1, _id: 0 });
+        const {response} = await Response.findOne({id_response: 'review_notification_message'}, {response: 1, _id: 0});
 
 
-        // if(review_star < 4){
-            const sendReview = await Reviews.create({review_text, chat_id, review_star})
-            await bot.telegram.sendMessage( '-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode:"HTML"})
-        // }
-        await bot.telegram.sendMessage( chat_id, response[user?.language], {parse_mode:"HTML"})
+        const sendReview = await Reviews.create({review_text, chat_id, review_star})
+        await bot.telegram.sendMessage('-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode: "HTML"})
+
+        await bot.telegram.sendMessage(chat_id, response[user?.language], {parse_mode: "HTML"})
 
 
         res.json(true);

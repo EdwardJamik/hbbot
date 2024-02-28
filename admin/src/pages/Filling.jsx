@@ -2,7 +2,12 @@ import {
     Row,
     Col,
     Card,
-    Table, Button, message, Tabs, List, Divider, Skeleton
+    Button,
+    message,
+    Tabs,
+    List,
+    Divider,
+    Skeleton
 } from "antd";
 import {useEffect, useState} from "react";
 import InfiniteScroll from 'react-infinite-scroll-component';

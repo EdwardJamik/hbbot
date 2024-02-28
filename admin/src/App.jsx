@@ -1,6 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
 import Home from "./pages/Home.jsx";
-import Tables from "./pages/Tables.jsx";
 import Rtl from "./pages/Rtl.jsx";
 import Profile from "./pages/Profile.jsx";
 import SignIn from "./pages/SignIn.jsx";
@@ -13,11 +12,13 @@ import {ProtectedRoute} from "./ProtectedRoute.jsx";
 import Filling from "./pages/Filling.jsx";
 import TgUsers from "./pages/TgUsers.jsx";
 import Category from "./pages/Category.jsx";
-import Settings from "./pages/Settings.jsx";
 import Product from "./pages/Product.jsx";
 import Reservation from "./pages/Reservation.jsx";
 import SelectedFilling from "./pages/SelectedFilling.jsx";
 import Reviews from "./pages/Reviews.jsx";
+import UsersChat from "./pages/UsersChat.jsx";
+import Chat from "./pages/Chat.jsx";
+import KnowledgeBase from "./pages/KnowledgeBase.jsx";
 
 function App() {
     const routes = [
@@ -46,12 +47,20 @@ function App() {
             element: <ProtectedRoute element={<Main><Product/></Main>}/>,
         },
         {
-            link: '/settings',
-            element: <ProtectedRoute element={<Main><Settings/></Main>}/>,
-        },
-        {
             link: '/feedback',
             element: <ProtectedRoute element={<Main><Reviews/></Main>}/>,
+        },
+        {
+            link: '/chatGPT',
+            element: <ProtectedRoute element={<Main><UsersChat/></Main>}/>,
+        },
+        {
+            link: '/chatGPT/knowledgeBase',
+            element: <ProtectedRoute element={<Main><KnowledgeBase/></Main>}/>,
+        },
+        {
+            link: '/chatGPT/:id',
+            element: <ProtectedRoute element={<Main><Chat/></Main>}/>,
         },
         {
             link: '/filling',

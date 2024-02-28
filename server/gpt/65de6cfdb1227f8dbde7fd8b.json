@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "До котрої години я можу зробити замовлення?"
+  },
+  {
+    "role": "assistant",
+    "content": "\"Orders must be placed before 5 pm for next day delivery.\" \n\n{\"citation\": \"Orders must be placed before 5 pm for next day delivery.\"}"
+  }
+]

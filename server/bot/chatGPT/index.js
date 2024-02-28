@@ -1,13 +1,14 @@
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const languageResponse = require("../middelware/middelware");
 const {Markup} = require("telegraf");
+const OpenAI = require("openai");
 
-const apiKey = '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'; // Замініть це своїм ключем API
-const apiUrl = 'https://api.openai.com/v1/chat/completions'; // URL API ChatGPT
-const chatHistoryFilePath = path.join(__dirname, 'chatHistory.json'); // Шлях до файлу історії чату
+const {GPT_API,GPT_ASSISSTAN} = process.env
 
+const openai = new OpenAI({
+    apiKey: GPT_API,
+});
 module.exports = async (ctx,id,message,language) => {
     try {
         const directoryPath = './gpt';
@@ -21,19 +22,36 @@ module.exports = async (ctx,id,message,language) => {
 
                 chatHistory.push({role: 'user', content: message});
 
-                const response = await axios.post(apiUrl, {
-                    model: 'gpt-3.5-turbo',
-                    messages: chatHistory,
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`,
-                    },
-                });
+                const thread = await openai.beta.threads.create()
 
-                const chatGptReply = response.data.choices[0].message.content;
+                const response = await openai.beta.threads.messages.create(
+                    thread.id,
+                    {content:message,role:'user'}
+                )
 
-                chatHistory.push({role: 'assistant', content: chatGptReply});
+                const run = await openai.beta.threads.runs.create(
+                    thread.id,
+                    {assistant_id:GPT_ASSISSTAN}
+                )
+
+                while (true){
+                    const run_status = await openai.beta.threads.runs.retrieve(
+                        thread.id,
+                        run.id
+                    )
+
+                    console.log(run_status.completed_at )
+
+                    if(run_status.completed_at !== null)
+                        break
+                }
+
+                const messages = await openai.beta.threads.messages.list(
+                    thread.id,
+                )
+
+                const chatGptReply = messages.data[0].content[0].text.value;
+                chatHistory.push({role:messages.data[0].role, content: messages.data[0].content[0].text.value});
 
                 const jsonData = JSON.stringify(chatHistory, null, 2);
 
@@ -49,9 +67,8 @@ module.exports = async (ctx,id,message,language) => {
                         ).resize())
                     }
                 });
-
-
-            } else {
+            }
+            else {
                 fs.readFile(filePath, 'utf8', async (readErr, data) => {
                     if (readErr) {
                         console.error(`Помилка при читанні файлу ${fileName}:`, readErr);
@@ -59,19 +76,36 @@ module.exports = async (ctx,id,message,language) => {
                         chatHistory = JSON.parse(data)
                         chatHistory.push({role: 'user', content: message});
 
-                        const response = await axios.post(apiUrl, {
-                            model: 'gpt-3.5-turbo',
-                            messages: chatHistory,
-                        }, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`,
-                            },
-                        });
+                        const thread = await openai.beta.threads.create()
 
-                        const chatGptReply = response.data.choices[0].message.content;
+                        const response = await openai.beta.threads.messages.create(
+                            thread.id,
+                            {content:message,role:'user'}
+                        )
 
-                        chatHistory.push({role: 'assistant', content: chatGptReply});
+                        const run = await openai.beta.threads.runs.create(
+                            thread.id,
+                            {assistant_id:GPT_ASSISSTAN}
+                        )
+
+                        while (true){
+                            const run_status = await openai.beta.threads.runs.retrieve(
+                                thread.id,
+                                run.id
+                            )
+
+                            console.log(run_status.completed_at )
+
+                            if(run_status.completed_at !== null)
+                                break
+                        }
+
+                        const messages = await openai.beta.threads.messages.list(
+                            thread.id,
+                        )
+
+                        const chatGptReply = messages.data[0].content[0].text.value;
+                        chatHistory.push({role:messages.data[0].role, content: messages.data[0].content[0].text.value});
 
                         const jsonData = JSON.stringify(chatHistory, null, 2);
 

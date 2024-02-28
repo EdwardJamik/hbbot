@@ -27,7 +27,8 @@ const usersSchema = new mongoose.Schema({
         type: String
     },
     ban: {
-        type: Boolean
+        type: Boolean,
+        default:false
     },
     user_bot_ban: {
         type: Boolean,
@@ -35,7 +36,7 @@ const usersSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: new Date(),
+        default: Date.now,
     },
     updatedAt: {
         type: Date,

@@ -2,7 +2,10 @@ import {
     Row,
     Col,
     Card,
-    Table, Button, Space, Input, Tag, message,
+    Table,
+    Button,
+    Space,
+    Input
 } from "antd";
 
 import {useEffect, useRef, useState} from "react";
@@ -11,50 +14,24 @@ import {url} from "../Config.jsx";
 import dayjs from "dayjs";
 import Highlighter from "react-highlight-words";
 import {SearchOutlined} from "@ant-design/icons";
+import {Link} from "react-router-dom";
 
 
-const editIcon = [
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M21.2799 6.40005L11.7399 15.94C10.7899 16.89 7.96987 17.33 7.33987 16.7C6.70987 16.07 7.13987 13.25 8.08987 12.3L17.6399 2.75002C17.8754 2.49308 18.1605 2.28654 18.4781 2.14284C18.7956 1.99914 19.139 1.92124 19.4875 1.9139C19.8359 1.90657 20.1823 1.96991 20.5056 2.10012C20.8289 2.23033 21.1225 2.42473 21.3686 2.67153C21.6147 2.91833 21.8083 3.21243 21.9376 3.53609C22.0669 3.85976 22.1294 4.20626 22.1211 4.55471C22.1128 4.90316 22.0339 5.24635 21.8894 5.5635C21.7448 5.88065 21.5375 6.16524 21.2799 6.40005V6.40005Z"
-                stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-            <path
-                d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13"
-                stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-    </svg>
-]
-
-function Reservation() {
+function UsersChat() {
 
     const [data, setData] = useState([])
 
     useEffect(() => {
         const getReserved = async () => {
             const {data} = await axios.get(
-                `${url}/api/v1/admin/getReserves`,
+                `${url}/api/v1/admin/getChats`,
                 {},
                 {withCredentials: true}
             );
             setData(data)
         }
         getReserved()
-    }, [data]);
-
-    const banUser = async (id, ban) => {
-        const user = {
-            id: id,
-            ban: ban
-        }
-        const {data} = await axios.post(
-            `${url}/api/v1/admin/banTgUser`,
-            {...user},
-            {withCredentials: true}
-        );
-
-        if (data.success) {
-            message.success(data.message)
-        }
-    };
+    }, []);
 
     const [searchText, setSearchText] = useState('');
     const [searchedColumn, setSearchedColumn] = useState('');
@@ -166,19 +143,6 @@ function Reservation() {
 
     const columns = [
         {
-            title: "",
-            dataIndex: "chat_id",
-            key: "chat_id",
-            align:'center',
-            render: (_,record) =>
-                <>
-                    {record?.declined ? <Tag color="red">Бронь отменена</Tag> : <></>}
-                    {record?.accepted ? <Tag color="green">Бронь подтверждена</Tag> : <></>}
-                    {!record?.accepted && !record?.declined ? <Tag color="orange">В ожидание</Tag> : <></>}
-                </>
-            ,
-        },
-        {
             title: "Пользователь",
             dataIndex: "chat_id",
             key: "chat_id",
@@ -200,53 +164,23 @@ function Reservation() {
         },
         {
             title: "Дата",
-            key: "date",
-            dataIndex: "date",
-            align:'center',
-            render: (_, record) => {
-                const time = record?.time
-                const date = record?.date
-                return dayjs(`${time} ${date}`).format('HH:mm:ss DD.MM.YYYY')
-            },
-            sorter: (a, b) => dayjs(`${a.time} ${a.date}`).unix() - dayjs(`${b.time} ${b.date}`).unix(),
-        },
-        {
-            title: "Имя",
-            dataIndex: "first_name",
-            key: "first_name",
-            align:'center',
-            ...getColumnSearchProps('first_name'),
-        },
-        {
-            title: "Количество",
-            dataIndex: "count_people",
-            key: "count_people",
-            align:'center',
-        },
-        {
-            title: "Бронь создана",
-            key: "createdAt",
-            dataIndex: "createdAt",
-            align:'center',
-            render: (createdAt) => <>{dayjs(createdAt).format('HH:mm:ss DD.MM.YYYY')}</>,
-            sorter: (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
-        },
-        {
-            title: "Последнее обновление брони",
             key: "updatedAt",
             dataIndex: "updatedAt",
             align:'center',
-            render: (updatedAt) => <>{dayjs(updatedAt).format('HH:mm:ss DD.MM.YYYY')}</>,
+            render: ( updatedAt) => {
+                return dayjs(updatedAt).format('HH:mm:ss DD.MM.YYYY')
+            },
             sorter: (a, b) => dayjs(a.updatedAt).unix() - dayjs(b.updatedAt).unix(),
         },
         {
             title: "",
-            key: "ban",
-            dataIndex: "ban",
+            key: "_id",
+            dataIndex: "_id",
             align:'center',
-            render: (_,record) =>
+            width:'10%',
+            render: (_id) =>
                 <div style={{display:'flex'}}>
-                    <Button type='primary' onClick={() => banUser(record._id,!record.ban)}>{editIcon}</Button>
+                    <Link type='primary' to={`/chatGPT/${_id}`}>Просмотреть переписку</Link>
                 </div>
             ,
         },
@@ -255,6 +189,12 @@ function Reservation() {
     return (
         <>
             <div className="tabled">
+                <div style={{marginBottom:'10px'}}>
+                    <Link to='/chatGPT/knowledgeBase'>
+                        <Button type='primary'>Knowledge base</Button>
+                    </Link>
+                </div>
+
                 <Row gutter={[24, 0]}>
                     <Col xs="24" xl={24}>
                         <Card
@@ -276,4 +216,4 @@ function Reservation() {
     );
 }
 
-export default Reservation;
+export default UsersChat;

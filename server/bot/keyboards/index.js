@@ -8,8 +8,9 @@ class keyboard {
 
         const keyboard =  Markup.keyboard(
             [
-                [await languageResponse.checkResponse(language,'book_a_table_button'), await languageResponse.checkResponse(language,'menu_button'), await languageResponse.checkResponse(language,'stickers_button')],
-                [await languageResponse.checkResponse(language,'review_button'),await languageResponse.checkResponse(language,'help_button')]
+                [await languageResponse.checkResponse(language,'book_a_table_button'), await languageResponse.checkResponse(language,'stickers_button')],
+                [await languageResponse.checkResponse(language,'review_button'),await languageResponse.checkResponse(language,'help_button')],
+                [await languageResponse.checkResponse(language,'change_language_button')]
             ]
         ).resize()
 
