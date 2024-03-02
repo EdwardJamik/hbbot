@@ -61,3 +61,25 @@ module.exports.Logout = async (req, res, next) => {
         console.error(error);
     }
 }
+
+module.exports.updatedAdminData = async (req, res, next) => {
+    try {
+        const { password, username } = req.body;
+
+        if(username === '' || username === null)
+            res.json({ message: "Не указан новый логин", success: false });
+
+        if(password === '' || password === null)
+            res.json({ message: "Не указан новый пароль", success: false });
+
+        if(username && password){
+            const newPassword = await bcrypt.hash(password, 12);
+            const existingUser = await User.updateOne({ username, password: newPassword });
+            res.json({ message: "Логин/Пароль успешно изменен", success: true });
+        }
+
+
+    } catch (error) {
+        console.error(error);
+    }
+};

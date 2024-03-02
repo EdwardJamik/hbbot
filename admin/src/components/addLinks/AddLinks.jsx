@@ -92,7 +92,7 @@ const AddLinks = ({type,id,content}) => {
                 onCancel={handleCancel}
                 footer={[
                     <Button key="cancel" onClick={handleCancel}>Скасувати</Button>,
-                    <Button key="ok" type="primary" onClick={handleOk}>{content ? 'Зберегти' : 'Створити'}</Button>,
+                    <Button key="ok" type="primary" onClick={handleOk}>{content ? 'Сохранить' : 'Создать'}</Button>,
                 ]}
             >
                 <Col style={{margin: '7px'}}>

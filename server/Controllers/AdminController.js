@@ -18,6 +18,8 @@ const Manager = require("../Models/user.model");
 const Response = require("../Models/response.model");
 const Reviews = require("../Models/reviews.model");
 const ChatGPT = require("../Models/chatgpt.model");
+const Sending = require("../Models/sending.model");
+const Product = require("../Models/product.model");
 const axios = require("axios");
 const languageResponse = require("../bot/middelware/middelware");
 const path = require("path");
@@ -308,7 +310,6 @@ module.exports.getCatName = async (req, res, next) => {
     }
 };
 
-
 module.exports.getUserLanguage = async (req, res, next) => {
     try {
         const {chat_id} = req.body;
@@ -324,18 +325,25 @@ module.exports.sendReviewUser = async (req, res, next) => {
     try {
         const {review_text, chat_id, review_star} = req.body;
 
-        const user = await TelegramUsers.findOne({chat_id}, {first_name: 1, username: 1, phone: 1, language: 1})
+        if(review_star > 0){
+            const user = await TelegramUsers.findOne({chat_id}, {first_name: 1, username: 1, phone: 1, language: 1})
 
-        const {response} = await Response.findOne({id_response: 'review_notification_message'}, {response: 1, _id: 0});
-
-
-        const sendReview = await Reviews.create({review_text, chat_id, review_star})
-        await bot.telegram.sendMessage('-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode: "HTML"})
-
-        await bot.telegram.sendMessage(chat_id, response[user?.language], {parse_mode: "HTML"})
+            const {response} = await Response.findOne({id_response: 'review_notification_message'}, {response: 1, _id: 0});
 
 
-        res.json(true);
+            const sendReview = await Reviews.create({review_text, chat_id, review_star})
+            // await bot.telegram.sendMessage('-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode: "HTML"})
+
+            await bot.telegram.sendMessage(chat_id, response[user?.language], {parse_mode: "HTML"})
+
+            res.json({access:true});
+        } else{
+            const user = await TelegramUsers.findOne({chat_id}, {first_name: 1, username: 1, phone: 1, language: 1})
+            const {response} = await Response.findOne({id_response: 'reviews_error_text'}, {response: 1, _id: 0});
+
+            res.json({access:false, eMessage:response[user?.language]});
+        }
+
     } catch (error) {
         console.error(error);
     }
@@ -477,12 +485,95 @@ module.exports.getProductCategory = async (req, res, next) => {
     }
 };
 
+module.exports.getReservInfo = async (req, res, next) => {
+    try {
+        const {id} = req.body
+        const reservInfo = await Reserved.aggregate([
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'chat_id',
+                    foreignField: 'chat_id',
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    count_people: 1,
+                    date:1,
+                    time:1,
+                    first_name:1,
+                    phone:1,
+                    declined:1,
+                    accepted:1,
+                    createdAt:1,
+                    updatedAt:1,
+                    'user.username': 1,
+                    'user.first_name': 1,
+                    'user.chat_id': 1,
+                    'user.language': 1
+                }
+            }
+        ])
+
+        res.json(reservInfo);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.acceptedReserved = async (req, res, next) => {
+    try {
+        const {id, isData, accepted} = req.body
+
+        if (id) {
+            if (accepted) {
+                const getName = await Reserved.updateOne({_id: id}, isData)
+                const {response} = await Response.findOne({id_response: 'confirm_reserved'}, {
+                    response: 1,
+                    _id: 0
+                });
+                let message = response[isData?.user?.language]
+                message = message.replace('{{date}}', isData.date);
+                message = message.replace('{{time}}', isData.time);
+                message = message.replace('{{count_people}}', isData.count_people);
+
+                bot.telegram.sendMessage(isData?.user?.chat_id, message, {parse_mode: "HTML"})
+                res.json({access: true, access_message: `Бронирование подтверждено`});
+            } else {
+                const getName = await Reserved.updateOne({_id: id}, isData)
+                const {response} = await Response.findOne({id_response: 'declined_reserved'}, {
+                    response: 1,
+                    _id: 0
+                });
+                let message = response[isData?.user?.language]
+                message = message.replace('{{date}}', isData.date);
+                message = message.replace('{{time}}', isData.time);
+                message = message.replace('{{count_people}}', isData.count_people);
+
+                bot.telegram.sendMessage(isData?.user?.chat_id, message, {parse_mode: "HTML"})
+                res.json({access: true, access_message: `Бронирование отменено`});
+            }
+        }
+
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 module.exports.createCatName = async (req, res, next) => {
     try {
         const {id,isData} = req.body
 
         if (!isData.title.ru || !isData.title.en || !isData.title.es || !isData.title.uk)
             return res.json({access: false, access_message: `Заполните все поля`});
+
+        if(!isData.photo)
+            return res.json({access: false, access_message: `Загрузите фото категории`});
 
         if(id){
             const getName = await Category.updateOne({_id:id},isData)
@@ -493,6 +584,352 @@ module.exports.createCatName = async (req, res, next) => {
         }
 
 
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.sendingList = async (req, res, next) => {
+    try {
+        try {
+            const sending= await Sending.find({sending_end:true}).sort({createdAt:-1});
+
+            const localizedSeminar = sending.map((user) => {
+                const localizedDateCreatedAt = dayjs(user.createdAt).tz('Europe/Kiev').format('DD.MM.YYYY HH:mm');
+                const localizedDateUpdateAt = dayjs(user.updatedAt).tz('Europe/Kiev').format('DD.MM.YYYY HH:mm');
+                const localizedDate = dayjs(user.date).tz('Europe/Kiev').format('DD.MM.YYYY HH:mm');
+                return {
+                    ...user._doc,
+                    createdAt: localizedDateCreatedAt,
+                    updatedAt: localizedDateUpdateAt,
+                    date: localizedDate,
+                };
+            });
+
+            res.json(localizedSeminar);
+        } catch (err) {
+            console.error(err);
+            res.status(500).send();
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send();
+    }
+}
+
+module.exports.sendingsListLoad = async (req, res, next) => {
+    try {
+        const sending = await Sending.find({
+            sending_end: false
+        });
+
+        const localizedSeminar = sending.map((user) => {
+            const localizedDateCreatedAt = dayjs(user.createdAt).tz('Europe/Kiev').format('DD.MM.YYYY HH:mm');
+            const localizedDateUpdateAt = dayjs(user.updatedAt).tz('Europe/Kiev').format('DD.MM.YYYY HH:mm');
+            const localizedDate = dayjs(user.date).tz('Europe/Kiev').format('DD.MM.YYYY HH:mm');
+            return {
+                ...user._doc,
+                createdAt: localizedDateCreatedAt,
+                updatedAt: localizedDateUpdateAt,
+                date: localizedDate,
+            };
+        });
+
+        res.json(localizedSeminar);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send();
+    }
+}
+
+module.exports.createSending = async (req, res, next) => {
+    try {
+        const {text, type, date, video, photo, button} = req.body
+        const {DOMAIN} = process.env;
+        let countTelegram, users = 0
+
+        countTelegram = await TelegramUsers.countDocuments({});
+        users = await TelegramUsers.find({});
+
+        let counter = 0
+        if (date !== 'Invalid Date' && date !== null && date !== undefined && date !== '') {
+            const insertedData = await Sending.insertMany({
+                date: date,
+                content: text,
+                type: type,
+                button: button,
+                image: photo,
+                watch: video,
+                un_sending_telegram: countTelegram
+            })
+        } else {
+            if (photo === null && video === null && users) {
+                for (const user of users) {
+                    const {chat_id,language} = user;
+                    try {
+                        if(text.en && language === 'en') {
+                            const sending = await bot.telegram.sendMessage(chat_id, text.en, {
+                                parse_mode: 'HTML'
+                            });
+
+                            if (sending?.chat?.id) {
+                                counter++
+                            }
+                        } else if(text.ru && language === 'ru'){
+                            const sending = await bot.telegram.sendMessage(chat_id, text.ru, {
+                                parse_mode: 'HTML'
+                            });
+
+                            if (sending?.chat?.id) {
+                                counter++
+                            }
+                        } else if(text.uk && language === 'uk'){
+                            const sending = await bot.telegram.sendMessage(chat_id, text.uk, {
+                                parse_mode: 'HTML'
+                            });
+
+                            if (sending?.chat?.id) {
+                                counter++
+                            }
+                        }
+                        else if(text.es && language === 'es'){
+                            const sending = await bot.telegram.sendMessage(chat_id, text.es, {
+                                parse_mode: 'HTML'
+                            });
+
+                            if (sending?.chat?.id) {
+                                counter++
+                            }
+                        }
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+            } else if (photo !== null && video === null && users) {
+                for (const user of users) {
+                    const {chat_id,language} = user;
+
+                    if (text !== '' && text !== null) {
+                        try {
+                            if (text.en && language === 'en') {
+                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
+                                    caption: text.en,
+                                    parse_mode: 'HTML'
+                                });
+
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            } else if (text.ru && language === 'ru') {
+                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
+                                    caption: text.ru,
+                                    parse_mode: 'HTML'
+                                });
+
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            } else if (text.uk && language === 'uk') {
+                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
+                                    caption: text.uk,
+                                    parse_mode: 'HTML'
+                                });
+
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            } else if (text.es && language === 'es') {
+                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
+                                    caption: text.es,
+                                    parse_mode: 'HTML'
+                                });
+
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    } else {
+                        try {
+                            const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
+                                parse_mode: 'HTML'
+                            });
+                            if (sending?.chat?.id) {
+                                counter++
+                            }
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                }
+            } else if (photo === null && video !== null && users) {
+                for (const user of users) {
+                    const {chat_id, language} = user;
+
+                    if (text !== '' && text !== null) {
+                        try {
+                            if (text.en && language === 'en') {
+                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
+                                    caption: text.en,
+                                    parse_mode: 'HTML'
+                                });
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            } else if (text.ru && language === 'ru') {
+                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
+                                    caption: text.ru,
+                                    parse_mode: 'HTML'
+                                });
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            } else if (text.uk && language === 'uk') {
+                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
+                                    caption: text.uk,
+                                    parse_mode: 'HTML'
+                                });
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            } else if (text.es && language === 'es') {
+                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
+                                    caption: text.es,
+                                    parse_mode: 'HTML'
+                                });
+                                if (sending?.chat?.id) {
+                                    counter++
+                                }
+                            }
+
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    } else {
+                        try {
+                            const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
+                                parse_mode: 'HTML'
+                            });
+                            if (sending?.chat?.id) {
+                                counter++
+                            }
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                }
+            }
+            await Sending.insertMany({
+                content: text,
+                type: type,
+                image: photo,
+                sending_end: true,
+                watch: video,
+                sending_telegram: counter,
+                button: button,
+                un_sending_telegram: countTelegram
+            })
+        }
+        res.json(true);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send();
+    }
+};
+
+module.exports.sendingsDelete = async (req, res, next) => {
+    try {
+        const {id} = req.body
+        const sending_file = await Sending.findOne({_id: id});
+
+        if (sending_file?.watch) {
+            fs.unlink(`./uploads/video/${sending_file.watch}`, (err) => {
+                if (err) {
+                    console.error('Ошибка при удаление фото:', err);
+                }
+            });
+        }
+
+        if (sending_file?.image) {
+            fs.unlink(`./uploads/image/${sending_file.image}`, (err) => {
+                if (err) {
+                    console.error('Ошибка при удаление фото:', err);
+                }
+            });
+        }
+        const sending = await Sending.deleteOne({_id: id});
+        res.json(true);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send();
+    }
+}
+
+module.exports.createProduct = async (req, res, next) => {
+    try {
+        const {id, isData} = req.body
+
+        if(isData.title.en  === '' || isData.title.ru  === '' || isData.title.es  === '' || isData.title.uk  === '' || isData.description.en  === '' || isData.description.ru === '' || isData.description.uk  === '' || isData.description.es  === '' || isData.photo  === '')
+            return res.json({access: false, access_message: `Заполните все поля`});
+
+        if(id === 0 || id){
+            await Product.updateOne({_id:id},isData)
+            return res.json({access: true, access_message: `Успешно обновлено`});
+        } else{
+            await Product.insertMany(isData)
+            return res.json({access: true, access_message: `Успешно обновлено`});
+        }
+
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.getProductField = async (req, res, next) => {
+    try {
+        const {id} = req.body
+
+        const getProduct = await Product.findOne({_id:id})
+
+        res.json(getProduct);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.deletedProduct = async (req, res, next) => {
+    try {
+        const {id} = req.body
+
+        await Product.deleteOne({_id:id})
+
+        res.json({access: true, access_message: `Успешно удално`});
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.deletedCategory = async (req, res, next) => {
+    try {
+        const {id} = req.body
+
+        await Category.deleteOne({_id:id})
+
+        res.json({access: true, access_message: `Успешно удално`});
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.getProduct = async (req, res, next) => {
+    try {
+        const {id} = req.body
+
+        const getProduct = await Product.find({category:id})
+
+        res.json(getProduct);
     } catch (error) {
         console.error(error);
     }

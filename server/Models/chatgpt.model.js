@@ -6,6 +6,9 @@ const chatgptScheme = new mongoose.Schema({
         ref: 'Users',
         required: true,
     },
+    thread_id:{
+        type: String,
+    },
     open:{
         type: Boolean,
         required: true,

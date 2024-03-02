@@ -35,7 +35,24 @@
         height: 100%;
       }
 
-      & a{
+      & .modal_price{
+        position: absolute;
+        display: block;
+        right: 6px;
+        margin: 0;
+        top: 6px;
+        border: none;
+        background: rgba(163, 132, 46, 0.9);
+
+
+        & > span{
+          font-size: 12px;
+          color: #fff;
+        }
+
+      }
+
+      & a, div.button{
         position: absolute;
         left: 0;
         bottom: 0;

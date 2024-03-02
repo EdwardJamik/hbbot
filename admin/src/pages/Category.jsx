@@ -81,7 +81,7 @@ function Category() {
 
     const confirm = async (id) => {
         const {data} = await axios.post(
-            `${url}/api/v1/deletedCategoryGame`,
+            `${url}/api/v1/admin/deletedCategory`,
             {id: id},
             {withCredentials: true}
         );
@@ -103,7 +103,7 @@ function Category() {
                     >
                         <Row gutter={[24, 24]}>
                             {data ? data.map((item, index) => (
-                                <Col span={12} key={index}>
+                                <Col span={24} key={index}>
                                     <Card className="card-billing-info" bordered="false">
                                         <div className="col-info">
                                             <Descriptions title={<>{item.title.ru}</>}>

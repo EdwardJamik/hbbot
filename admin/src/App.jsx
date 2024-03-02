@@ -19,6 +19,7 @@ import Reviews from "./pages/Reviews.jsx";
 import UsersChat from "./pages/UsersChat.jsx";
 import Chat from "./pages/Chat.jsx";
 import KnowledgeBase from "./pages/KnowledgeBase.jsx";
+import Sending from "./pages/Sending.jsx";
 
 function App() {
     const routes = [
@@ -43,12 +44,16 @@ function App() {
             element: <ProtectedRoute element={<Main><Reservation/></Main>}/>,
         },
         {
-            link: '/product/:id',
+            link: '/product/:idProduct',
             element: <ProtectedRoute element={<Main><Product/></Main>}/>,
         },
         {
             link: '/feedback',
             element: <ProtectedRoute element={<Main><Reviews/></Main>}/>,
+        },
+        {
+            link: '/mailing',
+            element: <ProtectedRoute element={<Main><Sending/></Main>}/>,
         },
         {
             link: '/chatGPT',

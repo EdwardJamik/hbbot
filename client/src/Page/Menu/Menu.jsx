@@ -1,72 +1,90 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import Category from "../../Components/Category/Category.jsx";
 
 import './menu.scss'
-import {Col, Row} from "antd";
+import {Col, Row, Tag} from "antd";
 
-import category_img_1 from '../../assets/category_1.png'
-import category_img_2 from '../../assets/category_2.png'
-import category_img_3 from '../../assets/category_3.png'
-import category_img_4 from '../../assets/category_4.png'
 import {useSelector} from "react-redux";
+import axios from "axios";
+import {url} from "../../Config.jsx";
+import {useParams} from "react-router-dom";
 
 const style = {
-    // background: '#0092ff',
     padding: '8px 0',
 };
 
 
 const Menu = () => {
+    const [isCategory, setCategory] = useState([])
+    const [isProduct, setProduct] = useState([])
 
     const language = useSelector(state => state.language)
     const category = useSelector(state => state.category)
 
+    const {idCategory} = useParams()
+
     useEffect(() => {
+        if(!idCategory) {
+            const getCategory = async () => {
+                const {data} = await axios.get(
+                    `${url}/api/v1/admin/getCategory/`,
+                    {withCredentials: true}
+                );
+
+                if (data)
+                    setCategory(data)
+            }
+            getCategory()
+        } else{
+            const getProduct = async () => {
+                const {data} = await axios.post(
+                    `${url}/api/v1/admin/getProduct`,
+                    {id:idCategory},
+                    {withCredentials: true}
+                );
+
+                if (data)
+                    setProduct(data)
+            }
+            getProduct()
+        }
 
     }, [category]);
 
     return (
         <>
-            <Category/>
+            <Category id={idCategory}/>
             <div className="menu_list">
-                {category === null ?
-                    <Row className="menu_items" gutter={[16, 24]}>
-                        <Col className="gutter-row" span={12}>
-                            <a href='#'>
-                                <div className='menu_item'>
-                                    <img src={category_img_1} alt=""/>
-                                    <a className="button" href='#'>STARTERS & SOUPS</a>
-                                </div>
-                            </a>
-                        </Col>
-                        <Col className="gutter-row" span={12}>
-                            <a href='#'>
-                                <div className='menu_item'>
-                                    <img src={category_img_2} alt=""/>
-                                    <a className="button" href='#'>SANDWICHES & SALADS</a>
-                                </div>
-                            </a>
-                        </Col>
-                        <Col className="gutter-row" span={12}>
-                            <a href='#'>
-                                <div className='menu_item'>
-                                    <img src={category_img_3} alt=""/>
-                                    <a className="button" href='#'>COFFEE & LEMONADES</a>
-                                </div>
-                            </a>
-                        </Col>
-                        <Col className="gutter-row" span={12}>
-                            <a href='#'>
-                                <div className='menu_item'>
-                                    <img src={category_img_4} alt=""/>
-                                    <a className="button" href='#'>DESSERTS</a>
-                                </div>
-                            </a>
-                        </Col>
-                    </Row>
+                <Row className="menu_items" gutter={[16, 24]}>
+                {!idCategory ?
+                    isCategory ?
+                        isCategory.map((item,index)=>
+                            <Col className="gutter-row" span={12} key={item._id}>
+                                <a href={`${item._id}`}>
+                                    <div className='menu_item'>
+                                        <img src={`${url}/images/${item.photo}`} alt={`${item.title[language]}`}/>
+                                        <a className="button" href={`${item._id}`}>{item?.title[language]}</a>
+                                    </div>
+                                </a>
+                            </Col>
+                        )
+                        :
+                        <></>
                     :
+                    isProduct ?
+                        isProduct.map((item,index)=>
+                            <Col className="gutter-row" span={12} key={item._id}>
+                                    <div className='menu_item'>
+                                        <Tag className='modal_price'><span>{item.price}$</span> <div></div></Tag>
+                                        <img src={`${url}/images/${item.photo}`} alt={`${item.title[language]}`}/>
+                                        <div className="button" href={`${item._id}`}>{item.title[language]}</div>
+                                    </div>
+                            </Col>
+                        )
+                        :
                     <></>
                 }
+                </Row>
 
 
             </div>

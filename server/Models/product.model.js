@@ -9,10 +9,6 @@ const productScheme = new mongoose.Schema({
         type: Object,
         required: true,
     },
-    options:{
-        type: Object,
-        required: true,
-    },
     price:{
         type: String,
         required: true,
@@ -22,7 +18,7 @@ const productScheme = new mongoose.Schema({
         ref: 'Category',
         required: true,
     },
-    img:{
+    photo:{
         type: String
     },
     createdAt: {

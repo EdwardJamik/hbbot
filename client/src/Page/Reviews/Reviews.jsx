@@ -2,14 +2,14 @@ import React, {useState} from 'react';
 import background from "../../assets/img.png";
 import Translate from "../../Components/Translate/Translate.jsx";
 import './reviews.scss'
-import {Button, Flex, Rate} from "antd";
+import {Button, Flex, message, Rate} from "antd";
 import TextArea from "antd/es/input/TextArea.js";
 import axios from "axios";
 import {url} from "../../Config.jsx";
 import {useSelector} from "react-redux";
 
 const Reviews = () => {
-    const [value, setValue] = useState(5);
+    const [value, setValue] = useState(0);
     const [isReview, setReview] = useState('');
     const [isModal, setModal] = useState(false);
     const chat_id = useSelector((state) => state.chat_id);
@@ -17,14 +17,20 @@ const Reviews = () => {
     const tg = window.Telegram.WebApp;
 
     const sendReviews = async () => {
-        const {data} = await axios.post(
-            `${url}/api/v1/admin/sendReviewUser`,
-            {review_text: isReview, chat_id, review_star: value},
-            {withCredentials: true}
-        );
+            if (value >= 4 && isModal || value < 4) {
+                const {data} = await axios.post(
+                    `${url}/api/v1/admin/sendReviewUser`,
+                    {review_text: isReview, chat_id, review_star: value},
+                    {withCredentials: true}
+                );
 
-        if (data)
-            tg.close();
+                if (data.access)
+                    tg.close();
+                else
+                    message.warning(data.eMessage)
+            } else {
+                setModal(true)
+            }
     }
 
     return (

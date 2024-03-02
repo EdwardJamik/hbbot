@@ -7,6 +7,7 @@ function Translate({ keyWord }) {
     const [translatedData, setTranslatedData] = useState(null);
     const language = useSelector((state) => state.language);
 
+    console.log(language)
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -25,11 +26,9 @@ function Translate({ keyWord }) {
     }, [keyWord, language]);
 
     if (translatedData === null) {
-        // You can return a loading state or null here
         return null;
     }
 
-    // Render your translated data here
     return <div>{translatedData}</div>;
 }
 

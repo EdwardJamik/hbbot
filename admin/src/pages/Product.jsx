@@ -10,27 +10,25 @@ import {useParams} from "react-router-dom";
 import {useEffect, useState} from "react";
 import axios from "axios";
 import {url} from "../Config.jsx";
-import EditGame from "../components/editGame/EditGame.jsx";
+import EditProduct from "../components/editProduct/EditProduct.jsx";
 
 
 const Product = () => {
 
     const [data, setData] = useState([])
     const [isCategory, setCategory] = useState('')
-    const { id } = useParams();
+    const { idProduct } = useParams();
     useEffect(() => {
-        const gameCategory = async () => {
+        const productList = async () => {
             // eslint-disable-next-line react-hooks/rules-of-hooks
             const {data} = await axios.post(
-                `${url}/api/v1/admin/getCategory`,
-                {id},
+                `${url}/api/v1/admin/getProduct`,
+                {id:idProduct},
                 {withCredentials: true}
             );
-            console.log(data)
             setData(data)
-            // setCategory(data.category)
         }
-        gameCategory()
+        productList()
     }, [data]);
 
     const deletebtn = [
@@ -54,7 +52,7 @@ const Product = () => {
 
     const confirm = async (id) => {
         const {data} = await axios.post(
-            `${url}/api/v1/deletedAppsToCategory`,
+            `${url}/api/v1/admin/deletedProduct`,
             {id: id},
             {withCredentials: true}
         );
@@ -71,36 +69,36 @@ const Product = () => {
                     <Card
                         className="header-solid h-full"
                         bordered={false}
-                        title={[<div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}><h6 className="font-semibold m-0">Додатки з категорії: {isCategory}</h6><EditGame content={false}/></div>]}
+                        title={[<div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}><h6 className="font-semibold m-0">Продукция {isCategory}</h6><EditProduct content={false}/></div>]}
                         bodyStyle={{paddingTop: "0" }}
                     >
                         <Row gutter={[24, 24]}>
-                            {data.map((item, index) => (
-                                <Col span={12} key={index}>
+                            {data ? data.map((item, index) => (
+                                <Col span={24} key={index}>
                                     <Card className="card-billing-info" bordered="false">
                                         <div className="col-info">
-                                            <Descriptions title={<>{item.title}</>}>
-                                                <Descriptions.Item label="Реліз" span={3}>
-                                                    {item.version}
-                                                </Descriptions.Item>
+                                            <Descriptions title={<>{item.title.ru}</>}>
                                             </Descriptions>
                                         </div>
                                         <div className="col-action" style={{flexDirection:'column'}}>
                                             <Popconfirm
-                                                title="Підтвердіть дію"
+                                                title="Подтвердите удаление"
                                                 onConfirm={()=>confirm(item._id)}
-                                                okText="Видалити"
-                                                cancelText="Скасувати"
+                                                okText="Удалить"
+                                                cancelText="Отменить"
                                             >
                                                 <Button type="link" danger>
-                                                    {deletebtn} Видалити
+                                                    {deletebtn} Удалить
                                                 </Button>
                                             </Popconfirm>
-                                            <EditGame id={item._id} content={true}/>
+                                            <EditProduct id={item._id} content={true}/>
                                         </div>
                                     </Card>
                                 </Col>
-                            ))}
+                            ))
+                                :
+                            <></>
+                            }
                         </Row>
                     </Card>
                 </Col>

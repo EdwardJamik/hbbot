@@ -38,6 +38,10 @@ function App() {
             element: <><Loader/><Menu/></>,
         },
         {
+            link: '/:idCategory',
+            element: <><Loader/><Menu/></>,
+        },
+        {
             link: '/reviews',
             element:<><Loader/><Reviews/></>,
         },

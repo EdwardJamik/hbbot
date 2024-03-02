@@ -11,6 +11,7 @@ import {url} from "../Config.jsx";
 import dayjs from "dayjs";
 import Highlighter from "react-highlight-words";
 import {SearchOutlined} from "@ant-design/icons";
+import EditReserved from "../components/EditReserved/EditReserved.jsx";
 
 
 const editIcon = [
@@ -246,7 +247,7 @@ function Reservation() {
             align:'center',
             render: (_,record) =>
                 <div style={{display:'flex'}}>
-                    <Button type='primary' onClick={() => banUser(record._id,!record.ban)}>{editIcon}</Button>
+                    <EditReserved id={record._id}/>
                 </div>
             ,
         },

@@ -2,7 +2,9 @@ import React, {useState} from 'react';
 import axios from "axios";
 import {url} from "../../Config.jsx";
 import {Button, Col, Input, message, Modal, Upload} from "antd";
-import {EditOutlined, UploadOutlined} from "@ant-design/icons";
+import {DollarOutlined, EditOutlined, UploadOutlined} from "@ant-design/icons";
+import TextArea from "antd/es/input/TextArea.js";
+import {useParams} from "react-router-dom";
 
 const pencil = [
     <svg
@@ -25,7 +27,7 @@ const pencil = [
 ];
 const addbutton = [
     // eslint-disable-next-line react/jsx-key
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"  key={1}>
         <path d="M15 12L12 12M12 12L9 12M12 12L12 9M12 12L12 15" stroke="#1C274C" strokeWidth="1.5"
               strokeLinecap="round"></path>
         <path
@@ -34,18 +36,18 @@ const addbutton = [
     </svg>
 ]
 
-const EditCategory = ({id,content}) => {
+const EditProduct = ({id,content}) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isData, setData] = useState({title:{ru:'',en:'',es:'',uk:''}, photo:null});
+    const [isData, setData] = useState({title:{en:'',ru:'',uk:'',es:''}, category: '', price:'', description:{en:'',ru:'',uk:'',es:''}, photo:''});
     const [fileList, setFileList] = React.useState([]);
     const [newFileName, setNewFileName] = useState(null);
-
+    const { idProduct } = useParams();
     const showModal = async () => {
         setIsModalOpen(!isModalOpen)
 
-        if(id === 0 || id){
+        if(id){
             const {data} = await axios.post(
-                `${url}/api/v1/admin/getCatName`,
+                `${url}/api/v1/admin/getProductField`,
                 {id:id},
                 {withCredentials: true}
             );
@@ -60,23 +62,26 @@ const EditCategory = ({id,content}) => {
                 },])
             }
 
-            setData({...data})
+            setData(data)
         }
     }
 
     const handleOk = async () => {
 
+        let appsData = isData
+        appsData.category = idProduct
+
         const {data} = await axios.post(
-            `${url}/api/v1/admin/createCatName`,
-            {isData,id},
+            `${url}/api/v1/admin/createProduct`,
+            {isData:appsData,id},
             {withCredentials: true}
         );
 
         if (data.access) {
-            setData({title: {ru: '', en: ''}})
+            setData({title:{en:'',ru:'',uk:'',es:''}, category: '', price:'', description:{en:'',ru:'',uk:'',es:''}, photo:''})
+            setIsModalOpen(false);
             setFileList([])
             setNewFileName(null)
-            setIsModalOpen(false);
             message.success(data.access_message)
         }
         else
@@ -87,10 +92,10 @@ const EditCategory = ({id,content}) => {
     };
 
     const handleCancel = () => {
-        setData({title: {ru: '', en: ''}})
+        setData({title:{en:'',ru:'',uk:'',es:''}, category: '', price:'', description:{en:'',ru:'',uk:'',es:''}, photo:''})
+        setIsModalOpen(false);
         setFileList([])
         setNewFileName(null)
-        setIsModalOpen(false);
     };
 
     const props = {
@@ -158,30 +163,57 @@ const EditCategory = ({id,content}) => {
                 ]}
             >
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="EN"
+                    <Input type='text'  placeholder="Название продукта En"
                            value={isData.title.en}
-                           onChange={(e) => setData({ ...isData, title: {...isData.title,en:e.target.value} })}
+                           onChange={(e) => setData({ ...isData, title: {...isData.title, en:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="UA"
-                           value={isData.title.uk}
-                           onChange={(e) => setData({ ...isData, title: {...isData.title,uk:e.target.value} })}
-                           prefix={<EditOutlined />} />
-                </Col>
-                <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="RU"
+                    <Input type='text'  placeholder="Название продукта Ru"
                            value={isData.title.ru}
-                           onChange={(e) => setData({ ...isData, title: {...isData.title,ru:e.target.value} })}
+                           onChange={(e) => setData({ ...isData, title: {...isData.title, ru:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="ES"
+                    <Input type='text'  placeholder="Название продукта Uk"
+                           value={isData.title.uk}
+                           onChange={(e) => setData({ ...isData, title: {...isData.title, uk:e.target.value} })}
+                           prefix={<EditOutlined />} />
+                </Col>
+                <Col style={{margin: '7px'}}>
+                    <Input type='text'  placeholder="Название продукта Es"
                            value={isData.title.es}
-                           onChange={(e) => setData({ ...isData, title: {...isData.title,es:e.target.value} })}
+                           onChange={(e) => setData({ ...isData, title: {...isData.title, es:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
+                    <h4>Описание</h4>
+                    <TextArea type='text'  placeholder="Описание En"
+                           value={isData.description.en}
+                           onChange={(e) => setData({ ...isData, description: {...isData.description, en:e.target.value} })}
+                           prefix={<EditOutlined />} />
+                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание Ru"
+                              value={isData.description.ru}
+                              onChange={(e) => setData({ ...isData, description: {...isData.description, ru:e.target.value} })}
+                              prefix={<EditOutlined />} />
+                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание Uk"
+                              value={isData.description.uk}
+                              onChange={(e) => setData({ ...isData, description: {...isData.description, uk:e.target.value} })}
+                              prefix={<EditOutlined />} />
+                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание Ru"
+                              value={isData.description.es}
+                              onChange={(e) => setData({ ...isData, description: {...isData.description, es:e.target.value} })}
+                              prefix={<EditOutlined />} />
+                </Col>
+                <Col style={{margin: '7px'}}>
+                    <h4>Цена</h4>
+                    <Input type='number'  placeholder="Цена"
+                           value={isData.price}
+                           onChange={(e) => setData({ ...isData, price: e.target.value })}
+                           prefix={<DollarOutlined />} />
+                </Col>
+                <Col style={{margin: '7px'}}>
+                    <h4>Фото</h4>
                     <Upload
                         {...props}
                         fileList={fileList}
@@ -190,9 +222,10 @@ const EditCategory = ({id,content}) => {
                         <Button style={{display:'flex',alignItems:'center',margin:'0 auto'}} icon={<UploadOutlined />}>Загрузить (Max: 1)</Button>
                     </Upload>
                 </Col>
+
             </Modal>
         </>
     );
 };
 
-export default EditCategory;
+export default EditProduct;

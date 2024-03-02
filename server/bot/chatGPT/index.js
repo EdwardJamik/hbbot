@@ -3,6 +3,7 @@ const path = require('path');
 const languageResponse = require("../middelware/middelware");
 const {Markup} = require("telegraf");
 const OpenAI = require("openai");
+const ChatModel = require("../../Models/chatgpt.model");
 
 const {GPT_API,GPT_ASSISSTAN} = process.env
 
@@ -34,17 +35,17 @@ module.exports = async (ctx,id,message,language) => {
                     {assistant_id:GPT_ASSISSTAN}
                 )
 
-                while (true){
-                    const run_status = await openai.beta.threads.runs.retrieve(
-                        thread.id,
-                        run.id
-                    )
+                async function waitForCompletion(threadId, runId) {
+                    const runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
 
-                    console.log(run_status.completed_at )
+                    console.log(runStatus.completed_at);
 
-                    if(run_status.completed_at !== null)
-                        break
+                    if (runStatus.completed_at === null) {
+                        await waitForCompletion(threadId, runId);
+                    }
                 }
+
+                await waitForCompletion(thread.id, run.id);
 
                 const messages = await openai.beta.threads.messages.list(
                     thread.id,
@@ -54,6 +55,8 @@ module.exports = async (ctx,id,message,language) => {
                 chatHistory.push({role:messages.data[0].role, content: messages.data[0].content[0].text.value});
 
                 const jsonData = JSON.stringify(chatHistory, null, 2);
+
+                await ChatModel.updateOne({_id:id, open: true},{thread_id:thread.id})
 
                 fs.writeFile(filePath, jsonData, 'utf8', async (writeErr) => {
                     if (writeErr) {
@@ -76,32 +79,31 @@ module.exports = async (ctx,id,message,language) => {
                         chatHistory = JSON.parse(data)
                         chatHistory.push({role: 'user', content: message});
 
-                        const thread = await openai.beta.threads.create()
-
+                        const user = await ChatModel.findOne({_id:id, open: true},{thread_id:1,_id:0})
                         const response = await openai.beta.threads.messages.create(
-                            thread.id,
+                            user?.thread_id,
                             {content:message,role:'user'}
                         )
 
                         const run = await openai.beta.threads.runs.create(
-                            thread.id,
+                            user?.thread_id,
                             {assistant_id:GPT_ASSISSTAN}
                         )
 
-                        while (true){
-                            const run_status = await openai.beta.threads.runs.retrieve(
-                                thread.id,
-                                run.id
-                            )
+                        async function waitForCompletion(threadId, runId) {
+                            const runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
 
-                            console.log(run_status.completed_at )
+                            console.log(runStatus.completed_at);
 
-                            if(run_status.completed_at !== null)
-                                break
+                            if (runStatus.completed_at === null) {
+                                await waitForCompletion(threadId, runId);
+                            }
                         }
 
+                        await waitForCompletion(user?.thread_id, run.id);
+
                         const messages = await openai.beta.threads.messages.list(
-                            thread.id,
+                            user?.thread_id,
                         )
 
                         const chatGptReply = messages.data[0].content[0].text.value;

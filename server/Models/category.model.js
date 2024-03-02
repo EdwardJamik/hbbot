@@ -5,7 +5,7 @@ const categoryScheme = new mongoose.Schema({
         type: Object,
         required: true,
     },
-    img:{
+    photo:{
         type: String
     },
     createdAt: {

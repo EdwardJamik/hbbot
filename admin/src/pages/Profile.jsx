@@ -40,7 +40,7 @@ function Profile() {
           <Card
               bordered={false}
               className="header-solid h-full justify-content-center d-flex flex-column"
-              title={<h6 className="font-semibold m-0">Зміна доступів</h6>}
+              title={<h6 className="font-semibold m-0">Смена доступов в админ панель</h6>}
           >
             <form>
               <div className="mb-3" style={{marginBottom: '10px'}}>
@@ -56,7 +56,7 @@ function Profile() {
                 }} className="form-control" id="password"/>
               </div>
               <Button style={{width:'100%', marginTop:'10px'}} key="save" className="button_continue" onClick={()=>changeAdminData()}>
-                Змінити
+                Изменить
               </Button>
             </form>
           </Card>
