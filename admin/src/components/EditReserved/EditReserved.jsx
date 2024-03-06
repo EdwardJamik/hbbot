@@ -18,8 +18,7 @@ const EditReserved = ({id}) => {
                 {id},
                 {withCredentials: true}
             );
-
-            setData(...data)
+            setData(data)
         }
     }
 
@@ -47,15 +46,16 @@ const EditReserved = ({id}) => {
 
     return (
         <>
-                <Button onClick={() => showModal()} type="link" className="darkbtn">
+                <Button onClick={() => showModal()} type="ghost" className="darkbtn">
                  Изменить
                 </Button>
             <Modal
                 title={<>
                     {isData?.declined ? <Tag color="red">Бронь отменена</Tag> : <></>}
                     {isData?.accepted ? <Tag color="green">Бронь подтверждена</Tag> : <></>}
-                    {!isData?.accepted && !isData?.declined ? <Tag color="orange">В ожидание</Tag> : <></>}
+                    {!isData?.accepted && !isData?.declined ? <Tag color="orange">В ожидании</Tag> : <></>}
                 </>}
+                centered={true}
                 open={isModalOpen}
                 onOk={handleOk}
                 onCancel={handleCancel}

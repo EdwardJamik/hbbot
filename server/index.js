@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const app = require("./server.js");
-const bot = require("./bot/bot")
+const {bot} = require("./bot/bot")
 require("dotenv").config();
 
 // const tune = require('./chat')

@@ -171,11 +171,12 @@ function Reservation() {
             dataIndex: "chat_id",
             key: "chat_id",
             align:'center',
+            width: '5%',
             render: (_,record) =>
                 <>
                     {record?.declined ? <Tag color="red">Бронь отменена</Tag> : <></>}
                     {record?.accepted ? <Tag color="green">Бронь подтверждена</Tag> : <></>}
-                    {!record?.accepted && !record?.declined ? <Tag color="orange">В ожидание</Tag> : <></>}
+                    {!record?.accepted && !record?.declined ? <Tag color="orange">В ожидании</Tag> : <></>}
                 </>
             ,
         },
@@ -186,21 +187,30 @@ function Reservation() {
             align:'center',
             ...getColumnSearchProps('chat_id'),
             render: (_,record) =>
-                <>
+                <div style={{display:'flex', flexDirection:'column'}}>
                     {record.user.username !== 'Not specified' ?
                         <>
+                            <span>{record.first_name}</span>
                             <a href={`https://t.me/${record.user.username}`}
-                               target="_blank" rel="noreferrer">{record.user.username}</a> ({record.user.chat_id})
+                               target="_blank"
+                               rel="noreferrer">{record.user.username}</a><span>({record.user.chat_id})</span>
                         </>
                         :
-                        <>{record.user.username} ({record.user.chat_id})</>
+                        <><span>{record.first_name}</span>{record.user.username} <span>({record.user.chat_id})</span></>
                     }
 
-                </>
+                </div>
             ,
         },
         {
-            title: "Дата",
+            title: "Количество",
+            dataIndex: "count_people",
+            key: "count_people",
+            align:'center',
+            width:'5%'
+        },
+        {
+            title: "Время бронирования",
             key: "date",
             dataIndex: "date",
             align:'center',
@@ -211,19 +221,7 @@ function Reservation() {
             },
             sorter: (a, b) => dayjs(`${a.time} ${a.date}`).unix() - dayjs(`${b.time} ${b.date}`).unix(),
         },
-        {
-            title: "Имя",
-            dataIndex: "first_name",
-            key: "first_name",
-            align:'center',
-            ...getColumnSearchProps('first_name'),
-        },
-        {
-            title: "Количество",
-            dataIndex: "count_people",
-            key: "count_people",
-            align:'center',
-        },
+
         {
             title: "Бронь создана",
             key: "createdAt",
@@ -267,6 +265,8 @@ function Reservation() {
                                     columns={columns}
                                     dataSource={data}
                                     className="ant-border-space"
+                                    size='small'
+                                    responsive={['md']}
                                 />
                             </div>
                         </Card>

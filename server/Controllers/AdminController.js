@@ -1,5 +1,5 @@
 
-const bot = require('../bot/bot')
+const {bot} = require('../bot/bot')
 const jwt = require("jsonwebtoken");
 const {Markup} = require("telegraf");
 const dayjs = require("dayjs");
@@ -24,6 +24,7 @@ const axios = require("axios");
 const languageResponse = require("../bot/middelware/middelware");
 const path = require("path");
 const OpenAI = require("openai");
+const {sendUserMessages} = require("../bot/bot");
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -332,7 +333,7 @@ module.exports.sendReviewUser = async (req, res, next) => {
 
 
             const sendReview = await Reviews.create({review_text, chat_id, review_star})
-            // await bot.telegram.sendMessage('-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode: "HTML"})
+            await bot.telegram.sendMessage('-4000583493', `<b>Отзыв</b>\n ${user?.first_name !== 'Not specified' && user?.first_name ? `\nFisrt name: ${user?.first_name}` : ''}${user?.username !== 'Not specified' && user?.username ? `\nUsername: @${user?.username}` : ''}${user?.phone !== 'Not specified' && user?.phone ? `\nPhone: ${user?.phone}` : ''}\n\n${review_star >= 1 ? '⭐ ' : ''}${review_star >= 2 ? '⭐ ' : ''}${review_star >= 3 ? '⭐ ' : ''}${review_star >= 4 ? '⭐ ' : ''}${review_star >= 5 ? '⭐ ' : ''}\n${review_text}`, {parse_mode: "HTML"})
 
             await bot.telegram.sendMessage(chat_id, response[user?.language], {parse_mode: "HTML"})
 
@@ -488,37 +489,7 @@ module.exports.getProductCategory = async (req, res, next) => {
 module.exports.getReservInfo = async (req, res, next) => {
     try {
         const {id} = req.body
-        const reservInfo = await Reserved.aggregate([
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'chat_id',
-                    foreignField: 'chat_id',
-                    as: 'user'
-                }
-            },
-            {
-                $unwind: '$user'
-            },
-            {
-                $project: {
-                    _id: 1,
-                    count_people: 1,
-                    date:1,
-                    time:1,
-                    first_name:1,
-                    phone:1,
-                    declined:1,
-                    accepted:1,
-                    createdAt:1,
-                    updatedAt:1,
-                    'user.username': 1,
-                    'user.first_name': 1,
-                    'user.chat_id': 1,
-                    'user.language': 1
-                }
-            }
-        ])
+        const reservInfo = await Reserved.findOne({_id: id},{createdAt:0, updatedAt:0, _id:0})
 
         res.json(reservInfo);
     } catch (error) {
@@ -533,29 +504,31 @@ module.exports.acceptedReserved = async (req, res, next) => {
         if (id) {
             if (accepted) {
                 const getName = await Reserved.updateOne({_id: id}, isData)
+                const getUser = await TelegramUsers.findOne({chat_id: isData?.chat_id})
                 const {response} = await Response.findOne({id_response: 'confirm_reserved'}, {
                     response: 1,
                     _id: 0
                 });
-                let message = response[isData?.user?.language]
-                message = message.replace('{{date}}', isData.date);
-                message = message.replace('{{time}}', isData.time);
-                message = message.replace('{{count_people}}', isData.count_people);
-
-                bot.telegram.sendMessage(isData?.user?.chat_id, message, {parse_mode: "HTML"})
+                let message = response[getUser?.language]
+                message = message?.replace('{{date}}', isData.date);
+                message = message?.replace('{{time}}', isData.time);
+                message = message?.replace('{{count_people}}', isData.count_people);
+                bot.telegram.sendMessage(isData?.chat_id, message, {parse_mode: "HTML"})
                 res.json({access: true, access_message: `Бронирование подтверждено`});
             } else {
                 const getName = await Reserved.updateOne({_id: id}, isData)
+                const getUser = await TelegramUsers.findOne({chat_id: isData?.chat_id})
                 const {response} = await Response.findOne({id_response: 'declined_reserved'}, {
                     response: 1,
                     _id: 0
                 });
-                let message = response[isData?.user?.language]
-                message = message.replace('{{date}}', isData.date);
-                message = message.replace('{{time}}', isData.time);
-                message = message.replace('{{count_people}}', isData.count_people);
 
-                bot.telegram.sendMessage(isData?.user?.chat_id, message, {parse_mode: "HTML"})
+                let message = response[getUser?.language]
+                message = message?.replace('{{date}}', isData.date);
+                message = message?.replace('{{time}}', isData.time);
+                message = message?.replace('{{count_people}}', isData.count_people);
+
+                bot.telegram.sendMessage(isData?.chat_id, message, {parse_mode: "HTML"})
                 res.json({access: true, access_message: `Бронирование отменено`});
             }
         }
@@ -646,12 +619,10 @@ module.exports.createSending = async (req, res, next) => {
     try {
         const {text, type, date, video, photo, button} = req.body
         const {DOMAIN} = process.env;
-        let countTelegram, users = 0
+        let countTelegram
 
         countTelegram = await TelegramUsers.countDocuments({});
-        users = await TelegramUsers.find({});
 
-        let counter = 0
         if (date !== 'Invalid Date' && date !== null && date !== undefined && date !== '') {
             const insertedData = await Sending.insertMany({
                 date: date,
@@ -663,174 +634,16 @@ module.exports.createSending = async (req, res, next) => {
                 un_sending_telegram: countTelegram
             })
         } else {
-            if (photo === null && video === null && users) {
-                for (const user of users) {
-                    const {chat_id,language} = user;
-                    try {
-                        if(text.en && language === 'en') {
-                            const sending = await bot.telegram.sendMessage(chat_id, text.en, {
-                                parse_mode: 'HTML'
-                            });
-
-                            if (sending?.chat?.id) {
-                                counter++
-                            }
-                        } else if(text.ru && language === 'ru'){
-                            const sending = await bot.telegram.sendMessage(chat_id, text.ru, {
-                                parse_mode: 'HTML'
-                            });
-
-                            if (sending?.chat?.id) {
-                                counter++
-                            }
-                        } else if(text.uk && language === 'uk'){
-                            const sending = await bot.telegram.sendMessage(chat_id, text.uk, {
-                                parse_mode: 'HTML'
-                            });
-
-                            if (sending?.chat?.id) {
-                                counter++
-                            }
-                        }
-                        else if(text.es && language === 'es'){
-                            const sending = await bot.telegram.sendMessage(chat_id, text.es, {
-                                parse_mode: 'HTML'
-                            });
-
-                            if (sending?.chat?.id) {
-                                counter++
-                            }
-                        }
-                    } catch (e) {
-                        console.error(e)
-                    }
-                }
-            } else if (photo !== null && video === null && users) {
-                for (const user of users) {
-                    const {chat_id,language} = user;
-
-                    if (text !== '' && text !== null) {
-                        try {
-                            if (text.en && language === 'en') {
-                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
-                                    caption: text.en,
-                                    parse_mode: 'HTML'
-                                });
-
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            } else if (text.ru && language === 'ru') {
-                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
-                                    caption: text.ru,
-                                    parse_mode: 'HTML'
-                                });
-
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            } else if (text.uk && language === 'uk') {
-                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
-                                    caption: text.uk,
-                                    parse_mode: 'HTML'
-                                });
-
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            } else if (text.es && language === 'es') {
-                                const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
-                                    caption: text.es,
-                                    parse_mode: 'HTML'
-                                });
-
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            }
-                        } catch (e) {
-                            console.error(e)
-                        }
-                    } else {
-                        try {
-                            const sending = await bot.telegram.sendPhoto(chat_id, `${DOMAIN}/sending/${photo}`, {
-                                parse_mode: 'HTML'
-                            });
-                            if (sending?.chat?.id) {
-                                counter++
-                            }
-                        } catch (e) {
-                            console.error(e)
-                        }
-                    }
-                }
-            } else if (photo === null && video !== null && users) {
-                for (const user of users) {
-                    const {chat_id, language} = user;
-
-                    if (text !== '' && text !== null) {
-                        try {
-                            if (text.en && language === 'en') {
-                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
-                                    caption: text.en,
-                                    parse_mode: 'HTML'
-                                });
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            } else if (text.ru && language === 'ru') {
-                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
-                                    caption: text.ru,
-                                    parse_mode: 'HTML'
-                                });
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            } else if (text.uk && language === 'uk') {
-                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
-                                    caption: text.uk,
-                                    parse_mode: 'HTML'
-                                });
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            } else if (text.es && language === 'es') {
-                                const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
-                                    caption: text.es,
-                                    parse_mode: 'HTML'
-                                });
-                                if (sending?.chat?.id) {
-                                    counter++
-                                }
-                            }
-
-                        } catch (e) {
-                            console.error(e)
-                        }
-                    } else {
-                        try {
-                            const sending = await bot.telegram.sendVideo(chat_id, `${DOMAIN}/sending/${video}`, {
-                                parse_mode: 'HTML'
-                            });
-                            if (sending?.chat?.id) {
-                                counter++
-                            }
-                        } catch (e) {
-                            console.error(e)
-                        }
-                    }
-                }
-            }
-            await Sending.insertMany({
+            const insertedData = await Sending.create({
                 content: text,
                 type: type,
-                image: photo,
-                sending_end: true,
-                watch: video,
-                sending_telegram: counter,
                 button: button,
+                image: photo,
+                watch: video,
                 un_sending_telegram: countTelegram
             })
+            const users = await TelegramUsers.find({ban:false,user_bot_ban:false});
+            sendUserMessages(text,users,photo,video,(insertedData?._id).toString())
         }
         res.json(true);
     } catch (err) {
@@ -934,3 +747,28 @@ module.exports.getProduct = async (req, res, next) => {
         console.error(error);
     }
 };
+
+cron.schedule('* * * * *', async () => {
+    try {
+        const currentDate = new Date();
+
+        const twoMinutesAgo = new Date(currentDate);
+        twoMinutesAgo.setMinutes(currentDate.getMinutes() - 2);
+
+        let insertedData = await Sending.findOne({
+            date: {
+                $gte: twoMinutesAgo,
+                $lte: currentDate,
+            },
+            sending_start: false,
+            sending_end: false
+        })
+
+        const users = await TelegramUsers.find({});
+
+        sendUserMessages(insertedData?.content,users,insertedData?.image,insertedData?.watch,insertedData?._id)
+
+    } catch (e) {
+        console.error(e)
+    }
+})

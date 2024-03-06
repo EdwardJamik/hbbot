@@ -178,6 +178,22 @@
     z-index: 8;
   }
 
+  & .copyReviews{
+    display: block;
+    margin: 10px auto 0;
+    background: none;
+    color:#fff;
+    font-size: 12px;
+
+    &:hover,&:active,&:focus{
+      border-color: rgba(163, 132, 46, 1) !important;
+      color: rgba(163, 132, 46, 1);
+      & span{
+        color: rgba(163, 132, 46, 1) !important;
+      }
+    }
+  }
+
   &:before{
     content: " ";
     position: fixed;
