@@ -1,0 +1,26 @@
+[
+  {
+    "role": "user",
+    "content": "Скільки коштує Truffle Tuna Bites?"
+  },
+  {
+    "role": "assistant",
+    "content": "{\"question\":\"Скільки коштує Truffle Tuna Bites?\"} Thanks for the question, I need to check with the facility administrator. You can ask another question or wait for an answer."
+  },
+  {
+    "role": "user",
+    "content": "Скільки коштує Truffle Tuna Bites?"
+  },
+  {
+    "role": "assistant",
+    "content": "Truffle Tuna Bites коштують $14.95. Будь ласка, не соромтесь звертатися за додатковою інформацією! 🍽️"
+  },
+  {
+    "role": "user",
+    "content": "Скільки коштує Truffle Tuna Bites?"
+  },
+  {
+    "role": "assistant",
+    "content": "Truffle Tuna Bites коштують $14.95. Будь ласка, звертайтеся, якщо у вас є ще питання! 🍽️"
+  }
+]

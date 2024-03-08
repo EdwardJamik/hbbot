@@ -25,6 +25,7 @@ const languageResponse = require("../bot/middelware/middelware");
 const path = require("path");
 const OpenAI = require("openai");
 const {sendUserMessages} = require("../bot/bot");
+const keyboard = require("../bot/keyboards");
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -261,6 +262,55 @@ module.exports.savedInstruction = async (req, res, next) => {
     }
 };
 
+module.exports.savedInstructionforProduct = async (req, res, next) => {
+    try {
+        const result = await Product.aggregate([
+            {
+                $lookup: {
+                    from: 'categories',
+                    localField: 'category',
+                    foreignField: '_id',
+                    as: 'cat'
+                }
+            },
+            {
+                $unwind: '$cat'
+            },
+            {
+                $project: {
+                    _id: 0,
+                    title: '$title.en',
+                    description: {
+                        $cond: {
+                            if: { $eq: ['$description.en', null] },
+                            then: '$description',
+                            else: '$description.en'
+                        }
+                    },
+                    price: 1,
+                    category: 1,
+                    category_title: '$cat.title.en',
+                }
+            }
+        ])
+
+        const knownLedge = fs.readFileSync('./input.txt', 'utf8');
+
+        const instructionsIndex = knownLedge.indexOf('Menu:') + 'Menu:'.length;
+
+        const jsonToString = result.map(item => `Category: '${item.category_title}' Title: '${item.title}' Description: '${item.description}' Price: '${item.price}$'`).join('\n');
+
+        const emptyLineIndex = knownLedge.indexOf('\n\n', instructionsIndex);
+        const modifiedString = knownLedge.slice(0, instructionsIndex) + '\n' + jsonToString + knownLedge.slice(emptyLineIndex);
+
+        fs.writeFileSync('./input.txt', modifiedString, 'utf8');
+
+        res.json({success:true,eMessage:'Меню обновлено в Knowledge base'});
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 module.exports.updatedFilling = async (req, res, next) => {
     try {
         const {data,value} = req.body;
@@ -356,47 +406,48 @@ module.exports.sendBookTable = async (req, res, next) => {
 
         const {WEB_APP_RESERVED} = process.env;
 
-        const findReserved = await Reserved.findOne({chat_id, declined: false, accepted: false});
+        if (!count_people || count_people === '') {
+            const {response} = await Response.findOne({id_response: 'book_people_error_text'}, {
+                response: 1,
+                _id: 0
+            });
+            const translate = response[language] ? response[language] : false;
+            return res.json({access: false, eMessage: translate});
+        }
+
+        if (!date || date === '') {
+            const {response} = await Response.findOne({id_response: 'book_date_error_text'}, {response: 1, _id: 0});
+            const translate = response[language] ? response[language] : false;
+            return res.json({access: false, eMessage: translate});
+        }
+
+        if (!time || time === '') {
+            const {response} = await Response.findOne({id_response: 'book_time_error_text'}, {response: 1, _id: 0});
+            const translate = response[language] ? response[language] : false;
+            return res.json({access: false, eMessage: translate});
+        }
+
+        if (!first_name || first_name === '') {
+            const {response} = await Response.findOne({id_response: 'book_name_error_text'}, {response: 1, _id: 0});
+            const translate = response[language] ? response[language] : false;
+            return res.json({access: false, eMessage: translate});
+        }
+
+        if (!phone || phone === '') {
+            const {response} = await Response.findOne({id_response: 'book_phone_error_text'}, {
+                response: 1,
+                _id: 0
+            });
+            const translate = response[language] ? response[language] : false;
+            return res.json({access: false, eMessage: translate});
+        }
+
+        const findReserved = await Reserved.findOne({_id:id});
 
         if (!findReserved) {
-            if (!count_people || count_people === '') {
-                const {response} = await Response.findOne({id_response: 'book_people_error_text'}, {
-                    response: 1,
-                    _id: 0
-                });
-                const translate = response[language] ? response[language] : false;
-                return res.json({access: false, eMessage: translate});
-            }
-
-            if (!date || date === '') {
-                const {response} = await Response.findOne({id_response: 'book_date_error_text'}, {response: 1, _id: 0});
-                const translate = response[language] ? response[language] : false;
-                return res.json({access: false, eMessage: translate});
-            }
-
-            if (!time || time === '') {
-                const {response} = await Response.findOne({id_response: 'book_time_error_text'}, {response: 1, _id: 0});
-                const translate = response[language] ? response[language] : false;
-                return res.json({access: false, eMessage: translate});
-            }
-
-            if (!first_name || first_name === '') {
-                const {response} = await Response.findOne({id_response: 'book_name_error_text'}, {response: 1, _id: 0});
-                const translate = response[language] ? response[language] : false;
-                return res.json({access: false, eMessage: translate});
-            }
-
-            if (!phone || phone === '') {
-                const {response} = await Response.findOne({id_response: 'book_phone_error_text'}, {
-                    response: 1,
-                    _id: 0
-                });
-                const translate = response[language] ? response[language] : false;
-                return res.json({access: false, eMessage: translate});
-            }
-
-            if (!id) {
                 const createdReserver = await Reserved.create({count_people, chat_id, date, time, first_name, phone})
+
+                const user = await TelegramUsers.findOne({chat_id});
 
                 const {response} = await Response.findOne({id_response: 'book_notification_message'}, {
                     response: 1,
@@ -405,6 +456,7 @@ module.exports.sendBookTable = async (req, res, next) => {
 
                 const decline = await Response.findOne({id_response: 'delcineBook_button'}, {response: 1, _id: 0});
                 const updated = await Response.findOne({id_response: 'changeBook_button'}, {response: 1, _id: 0});
+                const back_menu = await Response.findOne({ id_response:'back_main_answer_menu' }, { response: 1, _id: 0 });
 
                 const inlineKeyboard = {
                     inline_keyboard: [
@@ -417,28 +469,64 @@ module.exports.sendBookTable = async (req, res, next) => {
                         [
                             {text: decline?.response[language], callback_data: `declineBook-${createdReserver?._id}`},
                         ],
+                        [
+                            {text: back_menu?.response[language], callback_data: `back_main_answer_menu`},
+                        ]
                     ]
                 };
 
-                const {message_id} = await bot.telegram.sendMessage(chat_id, response[language], {
-                    reply_markup: inlineKeyboard,
-                    parse_mode: "HTML"
+
+
+                await bot.telegram.editMessageText(chat_id,user?.last_message_id,null, response[language],
+                    { reply_markup: inlineKeyboard,parse_mode: 'HTML'}
+                ).catch(async (e) => {
+                    const {message_id} = await bot.telegram.sendMessage(chat_id, response[language], {
+                        reply_markup: inlineKeyboard,
+                        parse_mode: "HTML"
+                    })
+
+                    await TelegramUsers.updateOne({chat_id},{last_message_id:message_id});
                 })
 
-                await bot.telegram.sendMessage('-1002109041322', "Поступил запрос на резервирование столика.\nОжидает подтверждения в админ панели")
-                await Reserved.updateOne({_id: createdReserver?._id}, {message_id})
+
+                await bot.telegram.sendMessage('-1002109041322', `Поступил запрос на резервирование столика.\nДата: ${date}\nВремя: ${time}\nКоличество: ${count_people}\nНомер телефона: ${phone}\n\nОжидает подтверждения в админ панели`)
 
                 res.json({access: true});
-            }
         } else{
             if (id) {
-                await Reserved.updateOne({_id: id}, {count_people, chat_id, date, time, first_name, phone})
+                await Reserved.updateOne({_id: id}, {count_people, chat_id, date, time, first_name, phone, accepted:false, declined:false})
+
                 res.json({access: true});
+
+                const user = await TelegramUsers.findOne({chat_id});
+
+
+                const {response} = await Response.findOne({id_response: 'reserved_waited_text'}, {
+                    response: 1,
+                    _id: 0
+                });
+
+                let message = response[user?.language]
+                message = message?.replace('{{date}}', dayjs(date).format('DD.MM.YYYY'));
+                message = message?.replace('{{time}}', time);
+                message = message?.replace('{{count_people}}', count_people);
+
+                const keyboards = await keyboard.back_button_to_reserved(user?.language,id)
+
+                await bot.telegram.editMessageText(chat_id,user?.last_message_id,null,message,
+
+                    {...keyboards,parse_mode: 'HTML'}
+                )
+                bot.telegram.sendMessage('-1002109041322', `Изменения брони столика\nДата: ${date}\nВремя: ${time}\nКоличество: ${count_people}\nНомер телефона: ${phone}\n\nОжидает подтверждения в админ панели`)
+
+
+
             } else{
                 const {response} = await Response.findOne({id_response: 'book_error_reserved_text'}, {
                     response: 1,
                     _id: 0
                 });
+
                 const translate = response[language] ? response[language] : false;
                 return res.json({access: false, eMessage: translate});
             }
@@ -509,11 +597,17 @@ module.exports.acceptedReserved = async (req, res, next) => {
                     response: 1,
                     _id: 0
                 });
+
                 let message = response[getUser?.language]
                 message = message?.replace('{{date}}', isData.date);
                 message = message?.replace('{{time}}', isData.time);
                 message = message?.replace('{{count_people}}', isData.count_people);
-                bot.telegram.sendMessage(isData?.chat_id, message, {parse_mode: "HTML"})
+
+                const keyboards = await keyboard.back_main_button(getUser?.language)
+
+                bot.telegram.deleteMessage(isData?.chat_id,getUser?.last_message_id).catch((e)=>console.log(e))
+                const {message_id} = await bot.telegram.sendMessage(isData?.chat_id, message, {...keyboards,parse_mode: "HTML"})
+                await TelegramUsers.updateOne({chat_id: isData?.chat_id}, {last_message_id:message_id})
                 res.json({access: true, access_message: `Бронирование подтверждено`});
             } else {
                 const getName = await Reserved.updateOne({_id: id}, isData)
@@ -528,7 +622,12 @@ module.exports.acceptedReserved = async (req, res, next) => {
                 message = message?.replace('{{time}}', isData.time);
                 message = message?.replace('{{count_people}}', isData.count_people);
 
-                bot.telegram.sendMessage(isData?.chat_id, message, {parse_mode: "HTML"})
+                const keyboards = await keyboard.back_main_button(getUser?.language)
+
+                bot.telegram.deleteMessage(isData?.chat_id,getUser?.last_message_id).catch((e)=>console.log(e))
+
+                const {message_id} = await bot.telegram.sendMessage(isData?.chat_id, message, {...keyboards, parse_mode: "HTML"})
+                await TelegramUsers.updateOne({chat_id: isData?.chat_id}, {last_message_id:message_id})
                 res.json({access: true, access_message: `Бронирование отменено`});
             }
         }

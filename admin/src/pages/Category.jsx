@@ -28,6 +28,17 @@ function Category() {
         gameCategory()
     }, [data]);
 
+    const updateProductKnowledge = async () => {
+        const {data} = await axios.get(
+            `${url}/api/v1/admin/updateKnowledge`,
+            {},
+            {withCredentials: true}
+        );
+
+        if(data.success)
+            message.success(data.eMessage)
+    }
+
     const view = [
         // eslint-disable-next-line react/jsx-key
         <svg width="20"
@@ -98,7 +109,7 @@ function Category() {
                     <Card
                         className="header-solid h-full"
                         bordered={false}
-                        title={[<div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}><h6 className="font-semibold m-0">Категории</h6><EditCategory content={false}/></div>]}
+                        title={[<div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}><h6 className="font-semibold m-0">Категории</h6><div style={{display:'flex'}}><Button style={{marginRight:'20px'}} type='primary' onClick={()=>updateProductKnowledge()}>Обновить меню в Knowledge base</Button><EditCategory content={false}/></div></div>]}
                         bodyStyle={{paddingTop: "0" }}
                     >
                         <Row gutter={[24, 24]}>

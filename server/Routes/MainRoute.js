@@ -2,7 +2,7 @@ const { getStats, banTgUser, telegramUserData, fillingData, updatedFilling, getC
     webAppTranslate, createCatName, getCatName, sendReviewUser, sendBookTable, getBookTable, getReviews, getReserves,
     getChats, getUserChat, getInstruction, savedInstruction, getReservInfo, acceptedReserved, sendingList,
     sendingsListLoad, createSending, sendingsDelete, createProduct, deletedProduct,
-    getProductField, getProduct, deletedCategory
+    getProductField, getProduct, deletedCategory, savedInstructionforProduct
 } = require("../Controllers/AdminController");
 const router = require("express").Router();
 
@@ -35,6 +35,8 @@ router.get("/getInstruction", getInstruction);
 router.post("/savedInstruction", savedInstruction);
 
 router.get("/getCategory", getCategory);
+
+router.get("/updateKnowledge", savedInstructionforProduct);
 
 router.get("/sendingList", sendingList);
 router.get("/sendingsListLoad", sendingsListLoad);

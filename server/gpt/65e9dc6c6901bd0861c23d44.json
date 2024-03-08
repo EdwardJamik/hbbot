@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "callback"
+  },
+  {
+    "role": "assistant",
+    "content": "Thanks for the question! I need to check with the facility administrator. You can ask another question or wait for an answer."
+  }
+]

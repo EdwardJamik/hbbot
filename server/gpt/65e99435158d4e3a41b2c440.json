@@ -1,0 +1,58 @@
+[
+  {
+    "role": "user",
+    "content": "какая самая дорогая бутылка вина у вас есть в наличии?"
+  },
+  {
+    "role": "assistant",
+    "content": "Вопрос: \"какая самая дорогая бутылка вина у вас есть в наличии?\" требует больше информации в базе знаний. Пожалуйста, дайте ответ как можно скорее в развернутом виде."
+  },
+  {
+    "role": "user",
+    "content": "До скольки вы работает?"
+  },
+  {
+    "role": "assistant",
+    "content": "Question answered correctly."
+  },
+  {
+    "role": "user",
+    "content": "До скольки вы работает?"
+  },
+  {
+    "role": "assistant",
+    "content": "Question answered correctly."
+  },
+  {
+    "role": "user",
+    "content": "До скольки вы работает?"
+  },
+  {
+    "role": "assistant",
+    "content": "Question: \"До скольки вы работает?\" requires more information in the knowledge base. Please provide a detailed answer as soon as possible."
+  },
+  {
+    "role": "user",
+    "content": "Могу ли я принести с собой вино?"
+  },
+  {
+    "role": "assistant",
+    "content": "Answer: Bringing hard liquor is prohibited; wine is allowed with a corkage fee. 🍷"
+  },
+  {
+    "role": "user",
+    "content": "Могу ли я принести с собой вино?"
+  },
+  {
+    "role": "assistant",
+    "content": "Answer: Bringing hard liquor is prohibited; wine is allowed with a corkage fee. 🍷"
+  },
+  {
+    "role": "user",
+    "content": "Могу ли я принести с собой вино?"
+  },
+  {
+    "role": "assistant",
+    "content": "Answer: Bringing hard liquor is prohibited; wine is allowed with a corkage fee. 🍷"
+  }
+]

@@ -79,8 +79,6 @@ const Book = () => {
                 setPhone(data?.phone)
                 setTime(data?.time)
 
-                if(data?.declined || data?.accepted)
-                    setClose(true)
             }
         }
 
@@ -109,6 +107,7 @@ const Book = () => {
                 backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat'
             }}>
+                <a href='/' className="back_to_menu other_page"><Translate keyWord='link_back_to_menu'/></a>
                 <div className="title">
                     <Translate keyWord='book_title_text'/>
                 </div>

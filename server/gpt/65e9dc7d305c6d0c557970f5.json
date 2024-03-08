@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "callback"
+  },
+  {
+    "role": "assistant",
+    "content": "Thanks for the callback request! To inquire about booking a table or any other information, please click on the \"Order a table\" button or ask your question here. How can I assist you today? 😊🍹"
+  }
+]

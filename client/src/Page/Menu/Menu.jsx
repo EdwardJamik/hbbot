@@ -2,17 +2,14 @@ import React, {useEffect, useState} from 'react';
 import Category from "../../Components/Category/Category.jsx";
 
 import './menu.scss'
-import {Col, Row, Tag} from "antd";
+import {Col, Row} from "antd";
 
 import {useSelector} from "react-redux";
 import axios from "axios";
 import {url} from "../../Config.jsx";
 import {useParams} from "react-router-dom";
 
-const style = {
-    padding: '8px 0',
-};
-
+import Product from '../../Components/Product/Product.jsx'
 
 const Menu = () => {
     const [isCategory, setCategory] = useState([])
@@ -53,7 +50,7 @@ const Menu = () => {
 
     return (
         <>
-            <Category id={idCategory}/>
+            <Category id={idCategory} visible={idCategory}/>
             <div className="menu_list">
                 <Row className="menu_items" gutter={[16, 24]}>
                 {!idCategory ?
@@ -73,13 +70,7 @@ const Menu = () => {
                     :
                     isProduct ?
                         isProduct.map((item,index)=>
-                            <Col className="gutter-row" span={12} key={item._id}>
-                                    <div className='menu_item'>
-                                        <Tag className='modal_price'><span>{item.price}$</span> <div></div></Tag>
-                                        <img src={`${url}/images/${item.photo}`} alt={`${item.title[language]}`}/>
-                                        <div className="button" href={`${item._id}`}>{item.title[language]}</div>
-                                    </div>
-                            </Col>
+                            <Product item={item} index={index}/>
                         )
                         :
                     <></>

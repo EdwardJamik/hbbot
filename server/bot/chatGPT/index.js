@@ -4,24 +4,26 @@ const languageResponse = require("../middelware/middelware");
 const {Markup} = require("telegraf");
 const OpenAI = require("openai");
 const ChatModel = require("../../Models/chatgpt.model");
+const {bot} = require("../bot");
 
 const {GPT_API,GPT_ASSISSTAN} = process.env
 
 const openai = new OpenAI({
     apiKey: GPT_API,
 });
-module.exports = async (ctx,id,message,language) => {
+module.exports = async (bot,ctx,id,message,language) => {
     try {
         const directoryPath = './gpt';
         const fileName = `${id}.json`;
         const filePath = path.join(directoryPath, fileName);
-
+        const chat_id = ctx?.chat?.id;
         let chatHistory = []
 
         fs.access(filePath, fs.constants.F_OK, async (err) => {
             if (err) {
 
                 chatHistory.push({role: 'user', content: message});
+
 
                 const thread = await openai.beta.threads.create()
 
@@ -38,8 +40,6 @@ module.exports = async (ctx,id,message,language) => {
                 async function waitForCompletion(threadId, runId) {
                     const runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
 
-                    console.log(runStatus.completed_at);
-
                     if (runStatus.completed_at === null) {
                         await waitForCompletion(threadId, runId);
                     }
@@ -52,7 +52,19 @@ module.exports = async (ctx,id,message,language) => {
                 )
 
                 const chatGptReply = messages.data[0].content[0].text.value;
-                chatHistory.push({role:messages.data[0].role, content: messages.data[0].content[0].text.value});
+
+                const regex = /\[.*?\]|\{.*?\}/g;
+                const found = chatGptReply.match(regex);
+
+                const question = JSON.parse(found)
+
+                if(found && question) {
+                    await bot.telegram.sendMessage('-4186044691', `Вопрос: "${question.question}" требует больше информации в базе знаний. Пожалуйста, дайте ответ как можно скорее в развернутом виде.\n\nchat_id:${chat_id}`).catch((e)=>{
+                        console.log(e)})
+                }
+
+                const resultString = chatGptReply.replace(regex, '');
+                chatHistory.push({role:messages.data[0].role, content: resultString});
 
                 const jsonData = JSON.stringify(chatHistory, null, 2);
 
@@ -62,12 +74,17 @@ module.exports = async (ctx,id,message,language) => {
                     if (writeErr) {
                         console.error('Помилка при створенні файлу:', writeErr);
                     } else {
-                        await ctx.replyWithHTML(chatGptReply,Markup.keyboard([
-                            [
-                                await languageResponse.checkResponse(language, `stop_gpt_button`),
+
+                        await ctx.replyWithHTML(resultString,Markup.inlineKeyboard([
+                                [
+                                    {
+                                        text:await languageResponse.checkResponse(language, `stop_gpt_button`),
+                                        callback_data: 'stop_gpt'
+                                    }
+                                ]
                             ]
-                            ]
-                        ).resize())
+                        ).resize()).catch((e)=>{
+                            console.log(e)})
                     }
                 });
             }
@@ -93,8 +110,6 @@ module.exports = async (ctx,id,message,language) => {
                         async function waitForCompletion(threadId, runId) {
                             const runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
 
-                            console.log(runStatus.completed_at);
-
                             if (runStatus.completed_at === null) {
                                 await waitForCompletion(threadId, runId);
                             }
@@ -107,23 +122,47 @@ module.exports = async (ctx,id,message,language) => {
                         )
 
                         const chatGptReply = messages.data[0].content[0].text.value;
-                        chatHistory.push({role:messages.data[0].role, content: messages.data[0].content[0].text.value});
+
+                        const regex = /\[.*?\]|\{.*?\}/g;
+                        const found = chatGptReply.match(regex);
+
+                        const question = JSON.parse(found)
+
+                        if(found && question) {
+                            await bot.telegram.sendMessage('-4186044691', `Вопрос: "${question.question}" требует больше информации в базе знаний. Пожалуйста, дайте ответ как можно скорее в развернутом виде.\n\nchat_id:${chat_id}`).catch((e)=>{
+                                console.log(e)})
+                        }
+                        const resultString = chatGptReply.replace(regex, '');
+                        chatHistory.push({role:messages.data[0].role, content: resultString});
 
                         const jsonData = JSON.stringify(chatHistory, null, 2);
 
                         fs.writeFile(filePath, jsonData, 'utf8', async (writeErr) => {
-                            if (writeErr) {
-                                console.error('Помилка при створенні файлу:', writeErr);
-                            } else {
-                                await ctx.replyWithHTML(chatGptReply,Markup.keyboard([
-                                        [
-                                            await languageResponse.checkResponse(language, `stop_gpt_button`),
+                            try {
+                                if (writeErr) {
+                                    console.error('Помилка при створенні файлу:', writeErr);
+                                } else {
+                                    const {message_id} = await ctx.replyWithHTML(resultString, Markup.inlineKeyboard([
+                                            [
+                                                {
+                                                    text: await languageResponse.checkResponse(language, `stop_gpt_button`),
+                                                    callback_data: 'stop_gpt'
+                                                }
+                                            ]
                                         ]
-                                    ]
-                                ).resize())
-                            }
-                        });
+                                    ).resize()).catch((e) => {
+                                        console.log(e)
+                                    })
 
+                                    await ctx.telegram.editMessageReplyMarkup(chat_id, message_id - 2, null, {}).catch((error) => {
+                                        console.error('Error:', error);
+                                    });
+                                }
+                            } catch (e){
+                                console.log(e)
+                            }
+
+                        });
                     }
                 });
             }

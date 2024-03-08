@@ -1,0 +1,58 @@
+[
+  {
+    "role": "user",
+    "content": "Хто ти воїн?"
+  },
+  {
+    "role": "assistant",
+    "content": " Thanks for the question, I need to check with the facility administrator. You can ask another question or wait for an answer."
+  },
+  {
+    "role": "user",
+    "content": "Хто ти воїн?"
+  },
+  {
+    "role": "assistant",
+    "content": " Thanks for the question, I need to check with the facility administrator. You can ask another question or wait for an answer."
+  },
+  {
+    "role": "user",
+    "content": "Воїн хто ти?"
+  },
+  {
+    "role": "assistant",
+    "content": " Thanks for the question, I need to check with the facility administrator. You can ask another question or wait for an answer."
+  },
+  {
+    "role": "user",
+    "content": "Воїн хто ти?"
+  },
+  {
+    "role": "assistant",
+    "content": "Я воїн світла ☀️"
+  },
+  {
+    "role": "user",
+    "content": "Хто ти воїн?"
+  },
+  {
+    "role": "assistant",
+    "content": " Thanks for the question, I need to check with the facility administrator. You can ask another question or wait for an answer."
+  },
+  {
+    "role": "user",
+    "content": "Воїн хто ти?"
+  },
+  {
+    "role": "assistant",
+    "content": "Я воїн світла ☀️"
+  },
+  {
+    "role": "user",
+    "content": "Хто ти воїн?"
+  },
+  {
+    "role": "assistant",
+    "content": "Я воїн світла ☀️"
+  }
+]

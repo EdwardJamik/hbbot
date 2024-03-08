@@ -30,8 +30,7 @@ How to see the menu:
 Click on the blue button "Menu" in the bot.
 
 Menu:
-Category: 'Category 1' Title: 'Product 1' Description: 'Mango, Passion Fruit , Oranges, Truffle oil, Saku Tuna, Special Spicy Sauce, Rice & Corn Chips' Price: '200$'
-Category: 'Category 1' Title: 'Product 2' Description: 'USDA Choice Raw Beef Tenderloin, Arugula, Raw Mushrooms, Parmesan, Honey, White Truffle Oil' Price: '120$'
-Category: 'Category 1' Title: 'Product 3' Description: 'USDA Choice Raw Beef Tenderloin, Arugula, Raw Mushrooms, Parmesan, Honey, White Truffle Oil' Price: '45$'
+Title: 'Truffle Tuna Bites' Description: 'Mango, Passion Fruit , Oranges, Truffle oil, Saku Tuna, Special Spicy Sauce, Rice & Corn Chips' Price: '25$'
+Title: 'Shrimp Croquettes' Description: 'with Green Avocado Aioli' Price: '15$'
 
 Reply short (1-2 sentences), be polite and friendly use relevant emojis, and reply in {language}.
