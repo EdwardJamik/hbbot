@@ -163,44 +163,44 @@ const EditProduct = ({id,content}) => {
                 ]}
             >
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="Название продукта En"
+                    <Input type='text'  placeholder="Product Name (En)"
                            value={isData.title.en}
                            onChange={(e) => setData({ ...isData, title: {...isData.title, en:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="Название продукта Ru"
+                    <Input type='text'  placeholder="Название продукта (Ru)"
                            value={isData.title.ru}
                            onChange={(e) => setData({ ...isData, title: {...isData.title, ru:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="Название продукта Uk"
+                    <Input type='text'  placeholder="Назва продукту (Uk)"
                            value={isData.title.uk}
                            onChange={(e) => setData({ ...isData, title: {...isData.title, uk:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
-                    <Input type='text'  placeholder="Название продукта Es"
+                    <Input type='text'  placeholder="Nombre del producto (Es)"
                            value={isData.title.es}
                            onChange={(e) => setData({ ...isData, title: {...isData.title, es:e.target.value} })}
                            prefix={<EditOutlined />} />
                 </Col>
                 <Col style={{margin: '7px'}}>
                     <h4>Описание</h4>
-                    <TextArea type='text'  placeholder="Описание En"
+                    <TextArea type='text'  placeholder="Description (En)"
                            value={isData.description.en}
                            onChange={(e) => setData({ ...isData, description: {...isData.description, en:e.target.value} })}
                            prefix={<EditOutlined />} />
-                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание Ru"
+                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание (Ru)"
                               value={isData.description.ru}
                               onChange={(e) => setData({ ...isData, description: {...isData.description, ru:e.target.value} })}
                               prefix={<EditOutlined />} />
-                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание Uk"
+                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Опис (Uk)"
                               value={isData.description.uk}
                               onChange={(e) => setData({ ...isData, description: {...isData.description, uk:e.target.value} })}
                               prefix={<EditOutlined />} />
-                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Описание Ru"
+                    <TextArea style={{marginTop:'10px'}} type='text'  placeholder="Descripción (Es)"
                               value={isData.description.es}
                               onChange={(e) => setData({ ...isData, description: {...isData.description, es:e.target.value} })}
                               prefix={<EditOutlined />} />

@@ -4,7 +4,7 @@ import Rtl from "./pages/Rtl.jsx";
 import Profile from "./pages/Profile.jsx";
 import SignIn from "./pages/SignIn.jsx";
 import Main from "./components/layout/Main.jsx";
-import "antd/dist/antd.css";
+// import "antd/dist/antd.css";
 import "./assets/styles/main.css";
 import "./assets/styles/responsive.css";
 import {Suspense} from "react";
@@ -20,6 +20,8 @@ import UsersChat from "./pages/UsersChat.jsx";
 import Chat from "./pages/Chat.jsx";
 import KnowledgeBase from "./pages/KnowledgeBase.jsx";
 import Sending from "./pages/Sending.jsx";
+import Users from "./pages/Users/Users.jsx";
+import BotChannel from "./pages/BotChannel.jsx";
 
 function App() {
     const routes = [
@@ -85,16 +87,16 @@ function App() {
         },
         {
             link: '/profile',
-            element: <ProtectedRoute element={<Main><Profile/></Main>}/>,
+            element: <ProtectedRoute element={<Main><Users/></Main>}/>,
+        },
+        {
+            link: '/bot_channels',
+            element: <ProtectedRoute element={<Main><BotChannel/></Main>}/>,
         },
         {
             link: '*',
             element: <ProtectedRoute element={<Main><Home/></Main>}/>,
         },
-        // {
-        //     link: '/',
-        //     element: <ProtectedRoute element={<Dashboard />} />,
-        // }
     ];
     return (
         <div className="App">

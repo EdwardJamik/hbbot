@@ -2,9 +2,17 @@ const { getStats, banTgUser, telegramUserData, fillingData, updatedFilling, getC
     webAppTranslate, createCatName, getCatName, sendReviewUser, sendBookTable, getBookTable, getReviews, getReserves,
     getChats, getUserChat, getInstruction, savedInstruction, getReservInfo, acceptedReserved, sendingList,
     sendingsListLoad, createSending, sendingsDelete, createProduct, deletedProduct,
-    getProductField, getProduct, deletedCategory, savedInstructionforProduct
+    getProductField, getProduct, deletedCategory, savedInstructionforProduct, userManagerList, RemoveUser, CreateUser,
+    UpdatedUser, rootMenu, botChannels, changeAccess, changeAccessLanguage
 } = require("../Controllers/AdminController");
 const router = require("express").Router();
+
+
+router.post("/rootMenu", rootMenu);
+
+router.get("/botChannels", botChannels);
+router.post("/changeAccess", changeAccess);
+router.post("/changeAccessLanguage", changeAccessLanguage);
 
 router.post("/banTgUser", banTgUser);
 router.get("/getStats", getStats);
@@ -13,10 +21,13 @@ router.get("/getReserves", getReserves);
 router.post("/fillingData", fillingData);
 router.post("/updatedFilling", updatedFilling);
 router.get("/getReviews", getReviews);
-
 router.get("/getChats", getChats);
 router.post("/getUserChat", getUserChat);
 
+router.get("/userList", userManagerList);
+router.post("/createUser", CreateUser);
+router.post("/removeUser", RemoveUser);
+router.post("/updateUser", UpdatedUser);
 
 router.post("/getUserLanguage", getUserLanguage);
 router.post("/webAppTranslate", webAppTranslate);

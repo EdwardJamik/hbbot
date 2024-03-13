@@ -2,12 +2,14 @@ const { message } = require('telegraf/filters');
 const Response = require('../../Models/response.model');
 const User = require('../../Models/user.model');
 const ChatModel = require('../../Models/chatgpt.model');
+const botChannels = require('../../Models/bot_chat.model');
 const { Markup } = require('telegraf');
 const { WEB_APP,GPT_ASSISSTAN,GPT_API } = process.env;
 const languageResponse = require('../middelware/middelware')
 const keyboard = require('../keyboards')
 const fs = require("fs");
 const Reserved = require("../../Models/reserved.model");
+const {translate} = require('@vitalets/google-translate-api');
 
 const ChatGpt = require('../chatGPT')
 const TelegramUsers = require("../../Models/user.model");
@@ -107,7 +109,7 @@ module.exports = async bot => {
 
 			const type = ctx?.message?.chat?.type
 
-			if(type !== 'group') {
+			if(type === 'private') {
 				const chat_id = ctx?.chat?.id;
 				const user = await User.findOne({chat_id}, {
 					_id: 0,
@@ -130,14 +132,23 @@ module.exports = async bot => {
 						const reponse = await languageResponse.checkIdResponse(user?.language, message)
 
 						if (user?.action !== 'ask' && user?.action !== 'start_ask') {
-							ctx.deleteMessage().catch((e) => console.log(e));
+							// ctx.deleteMessage().catch((e) => console.log(e));
+							ctx.replyWithChatAction('typing')
+							await User.updateOne({chat_id}, {action: 'start_ask'})
+							const findChat = await ChatModel.findOne({chat_id, open: true})
+							if (findChat) {
+								await ChatGpt(bot, ctx, findChat?._id, message, user?.language, true)
+							} else{
+								const createChating = await ChatModel.create({chat_id, open: true})
+								await ChatGpt(bot, ctx, createChating?._id, message, user?.language)
+							}
 						} else if (reponse === 'stop_gpt_button' && user?.action === 'start_ask') {
 							try {
 								ctx.replyWithChatAction('typing')
 								ctx.deleteMessage().catch((e) => console.log(e));
 
 								if (user?.last_message_id)
-									ctx.deleteMessage(user?.last_message_id).catch((e) => console.log(e));
+									ctx.deleteMessage(user?.last_message_id).catch((e) => {});
 
 								const main_keyboard = await keyboard.main_menu(chat_id,user?.language)
 								const findChat = await ChatModel.findOne({chat_id, open: true})
@@ -271,10 +282,6 @@ module.exports = async bot => {
 								parse_mode: 'HTML'
 							})
 						}
-
-
-
-
 					} else if (callback === 'stickers_button') {
 						try {
 							const keyboards = await keyboard.back_button(user?.language)
@@ -378,46 +385,65 @@ module.exports = async bot => {
 					}
 				}
 			} else {
+				const group_id = ctx?.update?.message?.chat?.id ? ctx?.update?.message?.chat?.id : ctx?.update?.channel_post?.chat?.id ? ctx?.update?.channel_post?.chat?.id : false
+				const groupType = ctx?.update?.message?.chat?.type ? ctx?.update?.message?.chat?.type : ctx?.update?.channel_post?.chat?.type ? ctx?.update?.channel_post?.chat?.type : false
+				const title = ctx?.update?.message?.chat?.title ? ctx?.update?.message?.chat?.title : ctx?.update?.channel_post?.chat?.title ? ctx?.update?.channel_post?.chat?.title : false
+
+				const groupAccess = await botChannels.findOne({chat_id:group_id})
+
+				if(!groupAccess){
+					await botChannels.create({chat_id:group_id,groupType,title})
+				}
+
 				const reply_to = ctx?.message?.reply_to_message;
-				const reply_to_text = reply_to.text
+				const reply_to_text = reply_to?.text
 				const message = ctx?.message?.text;
 
 				// chat_id
 				const chatIdRegex = /chat_id:(\d+)/;
-				const match = chatIdRegex.exec(reply_to_text);
+				const match = chatIdRegex?.exec(reply_to_text) ? chatIdRegex.exec(reply_to_text) : false;
 
-				//questions
-				const questionRegex = /Вопрос: "(.*?)"/;
-				const matchQuestions = questionRegex.exec(reply_to_text);
+				if(match && match[1]) {
+					//questions
+					const questionRegex = /Вопрос: "(.*?)"/;
+					const matchQuestions = questionRegex?.exec(reply_to_text) ? questionRegex?.exec(reply_to_text) : false;
 
-				if(match[1] && matchQuestions[1]){
+					if (match[1] && matchQuestions[1]) {
 
-					const user = await TelegramUsers.findOne({chat_id:match[1]}, { language: 1})
+						const user = await TelegramUsers.findOne({chat_id: match[1]}, {language: 1})
 
-					const {response} = await Response.findOne({id_response: 'answer_question_message_text'}, {response: 1, _id: 0});
+						const {response} = await Response.findOne({id_response: 'answer_question_message_text'}, {
+							response: 1,
+							_id: 0
+						});
 
-					let message_answer = response[user.language]
+						let message_answer = response[user.language]
 
-					message_answer = message_answer.replace(/{question}/g,matchQuestions[1])
-					message_answer = message_answer.replace(/{answer}/g,message)
+						message_answer = message_answer.replace(/{question}/g, matchQuestions[1])
 
-					ctx.replyWithHTML({chat_id:match[1],text:message_answer})
-					const data = fs.readFileSync('./input.txt', 'utf8');
+						const {text} = await translate(message, {to: `${user.language}`});
 
-					const instructionsIndex = data.indexOf('Instructions:') + 'Instructions:'.length;
+						if (text)
+							message_answer = message_answer.replace(/{answer}/g, text)
+						else
+							message_answer = message_answer.replace(/{answer}/g, message)
 
-					const modifiedString = data.slice(0, instructionsIndex) + `\n${matchQuestions[1]}:\n${message}.` + data.slice(instructionsIndex);
+						ctx.replyWithHTML({chat_id: match[1], text: message_answer})
+						const data = fs.readFileSync('./input.txt', 'utf8');
 
-					fs.writeFileSync('./input.txt', modifiedString, 'utf8');
+						const instructionsIndex = data.indexOf('Hubble Bubble rules:') + 'Hubble Bubble rules:'.length;
 
-					const openai = new OpenAI({
-						apiKey: GPT_API,
-					});
+						const modifiedString = data.slice(0, instructionsIndex) + `\n${message}.` + data.slice(instructionsIndex);
 
-					const newResponse = await openai.beta.assistants.update(`${GPT_ASSISSTAN}`,{instructions:modifiedString ? modifiedString : 'false'})
+						fs.writeFileSync('./input.txt', modifiedString, 'utf8');
 
+						const openai = new OpenAI({
+							apiKey: GPT_API,
+						});
+
+						const newResponse = await openai.beta.assistants.update(`${GPT_ASSISSTAN}`, {instructions: modifiedString ? modifiedString : 'false'})
+					}
 				}
-
 			}
 		} catch (e) {
 

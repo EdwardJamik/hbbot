@@ -1722,14 +1722,12 @@ ul.ant-menu.ant-menu-root.ant-menu-inline.ant-menu-light.left-nav
   .full-width {
     max-width: 100%;
   }
-  /* .ant-col.mobile-24 {
-    margin-bottom: 24px;
-  } */
 }
 
 body {
-  overflow: visible !important;
   width: 100% !important;
+
+  overflow-x: hidden;
 }
 
 .card-info-2 .ant-card-body {

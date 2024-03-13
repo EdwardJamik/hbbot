@@ -4,6 +4,7 @@ const languageResponse = require("../middelware/middelware");
 const {Markup} = require("telegraf");
 const OpenAI = require("openai");
 const ChatModel = require("../../Models/chatgpt.model");
+const User = require("../../Models/user.model");
 const {bot} = require("../bot");
 
 const {GPT_API,GPT_ASSISSTAN} = process.env
@@ -74,17 +75,19 @@ module.exports = async (bot,ctx,id,message,language) => {
                     if (writeErr) {
                         console.error('Помилка при створенні файлу:', writeErr);
                     } else {
+                            const user = await User.findOne({chat_id})
+                            ctx.deleteMessage(user?.last_message_id).catch((e)=>{})
 
-                        await ctx.replyWithHTML(resultString,Markup.inlineKeyboard([
+                        const {message_id} = await ctx.replyWithHTML(resultString,Markup.inlineKeyboard([
                                 [
                                     {
-                                        text:await languageResponse.checkResponse(language, `stop_gpt_button`),
+                                        text: await languageResponse.checkResponse(language, `back_main_answer_menu`),
                                         callback_data: 'stop_gpt'
                                     }
                                 ]
                             ]
-                        ).resize()).catch((e)=>{
-                            console.log(e)})
+                        ).resize()).catch((e)=>{})
+                        await User.updateOne({chat_id},{message_id})
                     }
                 });
             }
@@ -142,10 +145,11 @@ module.exports = async (bot,ctx,id,message,language) => {
                                 if (writeErr) {
                                     console.error('Помилка при створенні файлу:', writeErr);
                                 } else {
+                                    const user = await User.findOne({chat_id})
                                     const {message_id} = await ctx.replyWithHTML(resultString, Markup.inlineKeyboard([
                                             [
                                                 {
-                                                    text: await languageResponse.checkResponse(language, `stop_gpt_button`),
+                                                    text: await languageResponse.checkResponse(language, `back_main_answer_menu`),
                                                     callback_data: 'stop_gpt'
                                                 }
                                             ]
@@ -154,9 +158,10 @@ module.exports = async (bot,ctx,id,message,language) => {
                                         console.log(e)
                                     })
 
-                                    await ctx.telegram.editMessageReplyMarkup(chat_id, message_id - 2, null, {}).catch((error) => {
+                                    await ctx.telegram.editMessageReplyMarkup(chat_id, user?.message_id, null, { reply_markup: {remove_keyboard: true} }).catch((error) => {
                                         console.error('Error:', error);
                                     });
+                                    await User.updateOne({chat_id},{message_id})
                                 }
                             } catch (e){
                                 console.log(e)

@@ -7,19 +7,22 @@ const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
 const cron = require("node-cron");
 const fs = require("fs");
+const bcrypt = require('bcrypt');
 
 require('dotenv').config();
 const { v4: uuidv4 } = require('uuid');
 const auth = require("../Service/Middlewares/auth");
 const TelegramUsers = require("../Models/user.model");
+const BotAccessChanel = require("../Models/bot_chat.model");
 const Category = require("../Models/category.model");
 const Reserved = require("../Models/reserved.model");
-const Manager = require("../Models/user.model");
+const Manager = require("../Models/manager.model");
 const Response = require("../Models/response.model");
 const Reviews = require("../Models/reviews.model");
 const ChatGPT = require("../Models/chatgpt.model");
 const Sending = require("../Models/sending.model");
 const Product = require("../Models/product.model");
+const BotChatAccess = require("../Models/bot_chat.model");
 const axios = require("axios");
 const languageResponse = require("../bot/middelware/middelware");
 const path = require("path");
@@ -33,16 +36,17 @@ dayjs.extend(timezone);
 
 module.exports.rootMenu = async (req, res, next) => {
     try {
-        const token = req.cookies.token;
+        const {cookies} = req.body
+        const token = cookies.token;
 
         if (!token) return res.json(false);
 
         jwt.verify(token, process.env.JWT_SECRET);
         const adminlog = jwt.verify(token, process.env.JWT_SECRET);
 
-        const admin = await Manager.findOne({_id: adminlog?.id}, {entree: 1, _id: 0, root: 1});
+        const admin = await Manager.findOne({_id: adminlog?.id}, {root: 1, _id: 0, root_manager: 1});
 
-        res.send({admin})
+        res.send(admin)
     } catch (err) {
         res.json(false);
     }
@@ -66,9 +70,55 @@ module.exports.banTgUser = async (req, res, next) => {
     }
 };
 
+module.exports.changeAccess = async (req, res, next) => {
+    try {
+        const {id,access} = req.body
+
+        await BotAccessChanel.updateOne({_id:id},{access});
+
+        if(access){
+            return res.json({ success: true, message: `Рассылка для чата включена` });
+        } else{
+            return res.json({ success: true, message: `Рассылка для чата выключена` });
+        }
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send();
+    }
+};
+
+module.exports.changeAccessLanguage = async (req, res, next) => {
+    try {
+        const {id,language} = req.body
+
+        await BotAccessChanel.updateOne({_id:id},{language});
+
+        if(language){
+            return res.json({ success: true, message: `Язык рассылки для чата изменен` });
+        } else{
+            return res.json(false);
+        }
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send();
+    }
+};
+
 module.exports.telegramUserData = async (req, res, next) => {
     try {
         const users = await TelegramUsers.find({}).sort({createdAt:-1});
+
+        res.json(users);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.botChannels = async (req, res, next) => {
+    try {
+        const users = await BotAccessChanel.find({}).sort({title:1});
 
         res.json(users);
     } catch (error) {
@@ -741,7 +791,17 @@ module.exports.createSending = async (req, res, next) => {
                 watch: video,
                 un_sending_telegram: countTelegram
             })
-            const users = await TelegramUsers.find({ban:false,user_bot_ban:false});
+
+            let users = []
+            if(type.includes('private')){
+                users = await TelegramUsers.find({ban:false,user_bot_ban:false});
+            }
+
+            if(type.includes('group')){
+                const bot_access = await BotChatAccess.find({access:true});
+                users = [...users,...bot_access]
+            }
+
             sendUserMessages(text,users,photo,video,(insertedData?._id).toString())
         }
         res.json(true);
@@ -847,6 +907,82 @@ module.exports.getProduct = async (req, res, next) => {
     }
 };
 
+module.exports.RemoveUser = async (req, res) => {
+    try {
+        const {id} = req.body
+        await Manager.deleteOne({_id: id})
+        return res.status(201).json({message: 'Менеджера успешно удалено'});
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.CreateUser = async (req, res, next) => {
+    try {
+
+        const {username, password, root} = req.body
+
+        const existingUser = await Manager.findOne({ username });
+        if (existingUser) {
+            return res.json({message: "Аккаунт менеджера с таким логином уже существует", success: false});
+        }
+
+        if(!password || !username) {
+            return res.json({message: "Заполните все поля", success: false});
+        }
+
+        if(password.length<=7) {
+            return res.json({message: "Пароль более 8 или более символов!", success: false});
+        }
+        const roots = [!!root.includes('0'),!!root.includes('1'),!!root.includes('2'),!!root.includes('3'),!!root.includes('4'),!!root.includes('5'),!!root.includes('6'),!!root.includes('7')]
+        const newPassword = await bcrypt.hash(password, 12)
+        await Manager.create({password:newPassword, username, root:roots });
+
+        res.status(201).json({ message: "Аккаунт нового менеджера успешно создан", success: true });
+
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.UpdatedUser = async (req, res) => {
+    try {
+        const {id,username,root, password} = req.body
+
+        const existingUser = await Manager.findOne({_id:{$ne:id}, username });
+        if (existingUser) {
+            return res.json({message: "Аккаунт менеджера с таким логином уже существует", success: false});
+        }
+
+        if(!username) {
+            return res.json({message: "Заполните все поля!", success: false});
+        }
+
+        const roots = [!!root.includes('0'),!!root.includes('1'),!!root.includes('2'),!!root.includes('3'),!!root.includes('4'),!!root.includes('5'),!!root.includes('6'),!!root.includes('7')]
+
+        if(password) {
+            const newPassword = await bcrypt.hash(password, 12)
+            await Manager.updateOne({_id: id}, {username, root: roots, password:newPassword})
+        } else{
+            await Manager.updateOne({_id: id}, {username, root: roots})
+        }
+
+        return res.status(201).json({message: 'Аккаунт менеджера успешно изменен', success: true});
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+module.exports.userManagerList = async (req, res, next) => {
+try {
+    const list_user = await Manager.find().sort({username:1})
+    res.status(201).json({ array: list_user });
+} catch (err) {
+    console.error(err);
+    res.status(500).send();
+}
+};
+
 cron.schedule('* * * * *', async () => {
     try {
         const currentDate = new Date();
@@ -854,7 +990,7 @@ cron.schedule('* * * * *', async () => {
         const twoMinutesAgo = new Date(currentDate);
         twoMinutesAgo.setMinutes(currentDate.getMinutes() - 2);
 
-        let insertedData = await Sending.findOne({
+        let findSendings = await Sending.findOne({
             date: {
                 $gte: twoMinutesAgo,
                 $lte: currentDate,
@@ -863,9 +999,17 @@ cron.schedule('* * * * *', async () => {
             sending_end: false
         })
 
-        const users = await TelegramUsers.find({});
+        let users = []
+        if(findSendings?.type.includes('private')){
+            users = await TelegramUsers.find({ban:false,user_bot_ban:false});
+        }
 
-        sendUserMessages(insertedData?.content,users,insertedData?.image,insertedData?.watch,insertedData?._id)
+        if(findSendings?.type.includes('group')){
+            const bot_access = await BotChatAccess.find({access:true});
+            users = [...users,...bot_access]
+        }
+
+        sendUserMessages(findSendings?.content,users,findSendings?.image,findSendings?.watch,findSendings?._id)
 
     } catch (e) {
         console.error(e)

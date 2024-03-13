@@ -9,6 +9,13 @@ const managerSchema = new mongoose.Schema({
     password: {
         type: String,
     },
+    root: {
+        type: Object,
+    },
+    root_manager: {
+        type: Boolean,
+        default:false
+    },
     updatedAt: {
         type: Date,
         default: function() {

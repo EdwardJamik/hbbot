@@ -1,7 +1,7 @@
 import React, { useState} from 'react';
 import axios from "axios";
 import {url} from "../../Config";
-import {Button, Collapse, DatePicker, message, Spin, Tabs, Upload} from "antd";
+import {Button, DatePicker, message, Select, Spin, Tabs, Upload} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import dayjs from "dayjs";
 import {UploadOutlined} from "@ant-design/icons";
@@ -62,6 +62,12 @@ const SendingList = () => {
                 [name]: value,
             });
         }
+    };
+
+    const options = [{label: 'Пользователям бота',value:'private'},{label: 'Групам/Каналам',value:'group'}];
+
+    const handleChange = (value) => {
+        setFormData({...formData, type: value})
     };
 
     const props = {
@@ -185,23 +191,31 @@ const SendingList = () => {
             if (formData.video !== null || formData.photo !== null || formData.text !== '') {
 
                 if (formData.photo !== null && (formData.text.en).length <= 768 && (formData.text.ru).length <= 768 && (formData.text.uk).length <= 768 && (formData.text.es).length <= 768 || formData.video !== null && (formData.text.en).length <= 768 && (formData.text.ru).length <= 768 && (formData.text.uk).length <= 768 && (formData.text.es).length <= 768 || formData.video === null && formData.photo === null && formData.text !== '') {
+                    if((formData.text.en).length || (formData.text.ru).length || (formData.text.uk).length || (formData.text.es).length) {
+                        if (formData.type?.length) {
+                            resetFormData()
+                            setFileList([])
+                            setFileListVideo([])
+                            setNewFileName(null)
+                            setNewFileNameVideo(null)
+                            let createSeminarResponse = await axios.post(
+                                `${url}/api/v1/admin/createSending`,
+                                {...formData},
+                                {withCredentials: true}
+                            );
 
-                    resetFormData()
-                    setFileList([])
-                    setFileListVideo([])
-                    setNewFileName(null)
-                    setNewFileNameVideo(null)
-                    let createSeminarResponse = await axios.post(
-                        `${url}/api/v1/admin/createSending`,
-                        {...formData},
-                        {withCredentials: true}
-                    );
-
-                    if (createSeminarResponse) {
-                        message.success('Рассылку создано')
-                        setLoading(false)
-                        showModal()
+                            if (createSeminarResponse) {
+                                message.success('Рассылку создано')
+                                setLoading(false)
+                                showModal()
+                            }
+                        } else {
+                            message.warning('Выберите тип чатов для рассылки')
+                        }
+                    } else{
+                        message.warning('Заполните текст для рассылки')
                     }
+
                 } else {
                     setLoading(false)
                     message.warning('Рассылку с фото/видео должно иметь не больше 768 символов')
@@ -335,6 +349,20 @@ const SendingList = () => {
                             </Upload>
                         </>
                     }
+                </div>
+                <div>
+                    <p>Рассылка для:</p>
+                    <Select
+                        mode="tags"
+                        style={{
+                            width: '100%',
+                        }}
+                        id="roots"
+                        placeholder="Выберите тип чатов для рассылки"
+                        value={formData.type}
+                        onChange={handleChange}
+                        options={options}
+                    />
                 </div>
                 <Button key="saved" type="primary" onClick={() => handleUpload()}>
                     Создать

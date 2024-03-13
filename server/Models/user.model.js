@@ -26,6 +26,9 @@ const usersSchema = new mongoose.Schema({
     last_message_id: {
         type: String
     },
+    message_id: {
+        type: String
+    },
     ban: {
         type: Boolean,
         default:false

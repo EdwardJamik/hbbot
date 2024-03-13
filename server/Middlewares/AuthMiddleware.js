@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = process.env
 
 module.exports.userVerification = (req, res) => {
+
     const token = req.cookies.token
     if (!token) {
         return res.json({ status: false })
